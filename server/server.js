@@ -4,10 +4,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const http = require('http');
 
-// Charger les variables d'environnement
 dotenv.config();
 
-// Initialisation d'Express
 const app = express();
 const server = http.createServer(app);
 
@@ -29,6 +27,9 @@ mongoose.connect(process.env.MONGODB_URI)
     process.exit(1);
   });
 
+// Routes
+app.use('/api/auth', require('./routes/auth'));
+
 // Route de test
 app.get('/', (req, res) => {
   res.json({ 
@@ -38,7 +39,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Démarrage du serveur
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`✅ Serveur démarré sur http://localhost:${PORT}`);
