@@ -1,0 +1,13 @@
+{
+  "name": "doctor-consultation-backend",
+  "version": "1.0.0",
+  "description": "Backend for Doctor Consultation Platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": ["telemedicine", "doctor", "consultation"],
+  "author": "",
+  "license": "ISC"
+}
