@@ -3,7 +3,12 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const http = require('http');
+const fs = require('fs');
 
+
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
 dotenv.config();
 
 const app = express();
@@ -29,6 +34,11 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+// Après les autres routes
+app.use('/api/users', require('./routes/users'));
+
+// Créer le dossier uploads s'il n'existe pas
+
 
 // Route de test
 app.get('/', (req, res) => {

@@ -18,8 +18,8 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Le mot de passe est requis'],
-    minlength: 6,
-    select: false
+    minlength: 6
+    // ⚠️ IMPORTANT: On ne met pas 'select: false' pour l'instant
   },
   role: {
     type: String,
@@ -48,22 +48,36 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Hash du mot de passe avant sauvegarde
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
+// ✅ SOLUTION FINALE : Hashing AVANT la validation
+userSchema.pre('validate', function(next) {
+  // Ne pas utiliser next, juste retourner une Promise
+  return (async () => {
+    try {
+      // Vérifier si le mot de passe est présent et modifié
+      if (!this.isModified('password') || !this.password) {
+        return;
+      }
+      
+      // Hacher le mot de passe
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash(this.password, salt);
+      this.password = hash;
+      console.log('✅ Mot de passe hashé avec succès');
+    } catch (error) {
+      console.error('❌ Erreur lors du hashage:', error);
+      throw error;
+    }
+  })();
 });
 
 // Méthode pour comparer les mots de passe
 userSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+  try {
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (error) {
+    console.error('❌ Erreur comparePassword:', error);
+    return false;
+  }
 };
 
 module.exports = mongoose.model('User', userSchema);
