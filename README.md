@@ -58,3 +58,36 @@ Hooks personnalisés pour l'authentification
 Gestion d'état avec Redux Toolkit
 
 Layouts conditionnels selon le rôle
+
+
+Jour 3
+ 🚀 Fonctionnalités testées et validées
+Backend
+Recherche de médecins avec filtres multiples
+
+Récupération des détails d'un médecin par nom
+
+Récupération des disponibilités
+
+Création et consultation d'avis
+
+Calcul automatique des notes moyennes
+
+Frontend
+Affichage de la liste des médecins
+
+Filtres interactifs
+
+Pagination
+
+URLs propres avec slugs
+
+Page détail avec toutes les infos
+
+Affichage des disponibilités
+
+Système de notation par étoiles
+
+Navigation intuitive
+
+

@@ -37,6 +37,10 @@ app.use('/api/auth', require('./routes/auth'));
 // Après les autres routes
 app.use('/api/users', require('./routes/users'));
 
+// Après les autres routes
+app.use('/api/doctors', require('./routes/doctors'));
+app.use('/api/reviews', require('./routes/reviews'));
+
 // Créer le dossier uploads s'il n'existe pas
 
 

@@ -16,7 +16,7 @@ export const useAuth = () => {
 
   const handleLogout = () => {
     dispatch(logout());
-    router.push('/login');
+    router.push('/');
   };
 
   const requireAuth = (redirectTo: string = '/login') => {

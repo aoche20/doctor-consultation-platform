@@ -91,3 +91,52 @@ export interface UpdateProfileData {
   consultationFee?: number;
   experience?: number;
 }
+
+export interface Review {
+  _id: string;
+  patient: {
+    _id: string;
+    name: string;
+    profilePicture?: string;
+  };
+  doctor: string;
+  appointment: string;
+  rating: number;
+  comment: string;
+  tags: string[];
+  isAnonymous: boolean;
+  isVerified: boolean;
+  likes: string[];
+  replies: Array<{
+    doctor: string;
+    message: string;
+    date: string;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DoctorFilters {
+  specialization?: string;
+  minRating?: number;
+  minFee?: number;
+  maxFee?: number;
+  searchTerm?: string;
+  availableDay?: string;
+  language?: string;
+  insurance?: string;
+  sortBy?: 'rating' | 'fee_asc' | 'fee_desc' | 'experience' | 'reviews';
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
+export interface SearchResponse {
+  success: boolean;
+  doctors: User[];
+  pagination: Pagination;
+}
