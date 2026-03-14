@@ -1,9 +1,8 @@
-const User = require('../models/User');
-const Review = require('../models/Review');
+const prisma = require('../prisma/client');
 
-// @desc    Rechercher des médecins avec filtres
-// @route   GET /api/doctors/search
-// @access  Public
+// ============================================
+// RECHERCHE DE MÉDECINS
+// ============================================
 exports.searchDoctors = async (req, res) => {
   try {
     const {
@@ -14,88 +13,100 @@ exports.searchDoctors = async (req, res) => {
       searchTerm,
       availableDay,
       language,
-      insurance,
       sortBy = 'rating',
       page = 1,
       limit = 10
     } = req.query;
 
     // Construire le filtre
-    const filter = { role: 'doctor', isActive: true };
+    const where = { 
+      role: 'doctor', 
+      isActive: true 
+    };
     
     if (specialization) {
-      filter.specialization = specialization;
-    }
-    
-    if (searchTerm) {
-      filter.$text = { $search: searchTerm };
+      where.specialization = specialization;
     }
     
     if (minRating) {
-      filter.rating = { $gte: parseFloat(minRating) };
+      where.rating = { gte: parseFloat(minRating) };
     }
     
     if (minFee || maxFee) {
-      filter.consultationFee = {};
-      if (minFee) filter.consultationFee.$gte = parseInt(minFee);
-      if (maxFee) filter.consultationFee.$lte = parseInt(maxFee);
+      where.consultationFee = {};
+      if (minFee) where.consultationFee.gte = parseInt(minFee);
+      if (maxFee) where.consultationFee.lte = parseInt(maxFee);
     }
     
-    if (language) {
-      filter.languages = language;
-    }
-    
-    if (insurance) {
-      filter.insuranceAccepted = insurance;
-    }
-    
-    if (availableDay) {
-      filter['availableSlots'] = {
-        $elemMatch: {
-          day: availableDay,
-          isAvailable: true
-        }
-      };
+    if (searchTerm) {
+      where.OR = [
+        { name: { contains: searchTerm } },
+        { specialization: { contains: searchTerm } },
+        { bio: { contains: searchTerm } }
+      ];
     }
 
     // Options de tri
-    let sortOptions = {};
+    let orderBy = {};
     switch (sortBy) {
       case 'rating':
-        sortOptions = { rating: -1, totalReviews: -1 };
+        orderBy = { rating: 'desc' };
         break;
       case 'fee_asc':
-        sortOptions = { consultationFee: 1 };
+        orderBy = { consultationFee: 'asc' };
         break;
       case 'fee_desc':
-        sortOptions = { consultationFee: -1 };
+        orderBy = { consultationFee: 'desc' };
         break;
       case 'experience':
-        sortOptions = { experience: -1 };
+        orderBy = { experience: 'desc' };
         break;
       case 'reviews':
-        sortOptions = { totalReviews: -1 };
+        orderBy = { totalReviews: 'desc' };
         break;
       default:
-        sortOptions = { rating: -1 };
+        orderBy = { rating: 'desc' };
     }
 
     // Pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
     // Exécuter la requête
-    const doctors = await User.find(filter)
-      .select('-password')
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(parseInt(limit));
+    const doctors = await prisma.user.findMany({
+      where,
+      orderBy,
+      skip,
+      take: parseInt(limit),
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        profilePicture: true,
+        specialization: true,
+        consultationFee: true,
+        experience: true,
+        rating: true,
+        totalReviews: true,
+        isVerified: true,
+        bio: true,
+        languages: true,
+        availableSlots: true
+      }
+    });
     
     // Compter le total
-    const total = await User.countDocuments(filter);
+    const total = await prisma.user.count({ where });
+
+    // Parser les champs JSON
+    const parsedDoctors = doctors.map(doctor => ({
+      ...doctor,
+      languages: doctor.languages ? JSON.parse(doctor.languages) : ['Français'],
+      availableSlots: doctor.availableSlots ? JSON.parse(doctor.availableSlots) : []
+    }));
 
     res.json({
       success: true,
-      doctors,
+      doctors: parsedDoctors,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -112,45 +123,72 @@ exports.searchDoctors = async (req, res) => {
   }
 };
 
-// ✅ NOUVELLE FONCTION AJOUTÉE
-// @desc    Obtenir les détails d'un médecin par ID
-// @route   GET /api/doctors/:id
-// @access  Public
+// ============================================
+// DÉTAILS MÉDECIN PAR ID
+// ============================================
 exports.getDoctorDetails = async (req, res) => {
   try {
-    const doctor = await User.findOne({
-      _id: req.params.id,
-      role: 'doctor',
-      isActive: true
-    }).select('-password');
+    const doctorId = parseInt(req.params.id);
+    
+    const doctor = await prisma.user.findUnique({
+      where: { id: doctorId },
+      include: {
+        reviewsAsDoctor: {
+          include: {
+            patient: {
+              select: {
+                id: true,
+                name: true,
+                profilePicture: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 10
+        }
+      }
+    });
 
-    if (!doctor) {
+    if (!doctor || doctor.role !== 'doctor') {
       return res.status(404).json({
         success: false,
         message: 'Médecin non trouvé'
       });
     }
 
-    // Récupérer les avis du médecin
-    const reviews = await Review.find({ doctor: doctor._id })
-      .populate('patient', 'name profilePicture')
-      .sort('-createdAt')
-      .limit(10);
-
     // Statistiques des notes
-    const ratingStats = await Review.aggregate([
-      { $match: { doctor: doctor._id } },
-      { $group: {
-        _id: '$rating',
-        count: { $sum: 1 }
-      }},
-      { $sort: { _id: -1 } }
-    ]);
+    const ratingStats = await prisma.review.groupBy({
+      by: ['rating'],
+      where: { doctorId },
+      _count: {
+        rating: true
+      }
+    });
+
+    // Parser les champs JSON
+    const parsedDoctor = {
+      ...doctor,
+      languages: doctor.languages ? JSON.parse(doctor.languages) : ['Français'],
+      education: doctor.education ? JSON.parse(doctor.education) : [],
+      workExperience: doctor.workExperience ? JSON.parse(doctor.workExperience) : [],
+      insuranceAccepted: doctor.insuranceAccepted ? JSON.parse(doctor.insuranceAccepted) : [],
+      availableSlots: doctor.availableSlots ? JSON.parse(doctor.availableSlots) : []
+    };
+
+    const parsedReviews = doctor.reviewsAsDoctor.map(review => ({
+      ...review,
+      tags: review.tags ? JSON.parse(review.tags) : []
+    }));
+
+    // Ne pas renvoyer le mot de passe
+    const { password, ...doctorWithoutPassword } = parsedDoctor;
 
     res.json({
       success: true,
-      doctor,
-      reviews,
+      doctor: doctorWithoutPassword,
+      reviews: parsedReviews,
       ratingStats
     });
   } catch (error) {
@@ -162,73 +200,107 @@ exports.getDoctorDetails = async (req, res) => {
   }
 };
 
-// @desc    Obtenir les détails d'un médecin par son nom
-// @route   GET /api/doctors/by-name/:name
-// @access  Public
+// ============================================
+// DÉTAILS MÉDECIN PAR NOM
+// ============================================
+// ============================================
+// DÉTAILS MÉDECIN PAR NOM (Version corrigée pour MySQL)
+// ============================================
+// ============================================
+// DÉTAILS MÉDECIN PAR NOM (Version SUPER robuste)
+// ============================================
 exports.getDoctorByName = async (req, res) => {
   try {
     const { name } = req.params;
     
     console.log('📥 Requête reçue - Nom recherché:', name);
-    
-    // Décoder le nom (remplacer les tirets par des espaces)
-    let searchName = name;
-    
-    // Si le nom contient des tirets, les remplacer par des espaces
-    if (name.includes('-')) {
-      searchName = name.replace(/-/g, ' ');
-    }
-    
-    console.log('📥 Nom après traitement:', searchName);
-    
-    // RECHERCHE FLEXIBLE - Plusieurs stratégies
-    
-    // Stratégie 1: Recherche exacte insensible à la casse
-    let doctor = await User.findOne({
-      name: { $regex: new RegExp(`^${searchName}$`, 'i') },
-      role: 'doctor',
-      isActive: true
-    }).select('-password');
-    
-    // Stratégie 2: Si pas trouvé, enlever le "Dr" ou "Dr."
-    if (!doctor && searchName.startsWith('Dr ')) {
-      const withoutTitle = searchName.replace(/^Dr\s+/, '');
-      console.log('📥 Recherche sans titre:', withoutTitle);
-      
-      doctor = await User.findOne({
-        name: { $regex: new RegExp(withoutTitle, 'i') },
+
+    // Nettoyer le nom (enlever les espaces multiples, etc.)
+    const cleanName = name.trim().replace(/\s+/g, ' ');
+    console.log('📥 Nom nettoyé:', cleanName);
+
+    let doctor = null;
+
+    // STRATÉGIE 1: Recherche exacte (sensible à la casse)
+    doctor = await prisma.user.findFirst({
+      where: {
+        name: cleanName,
         role: 'doctor',
         isActive: true
-      }).select('-password');
-    }
-    
-    // Stratégie 3: Si pas trouvé, chercher avec "Dr." (point)
-    if (!doctor && !searchName.includes('.')) {
-      const withDot = searchName.replace('Dr ', 'Dr. ');
-      console.log('📥 Recherche avec point:', withDot);
-      
-      doctor = await User.findOne({
-        name: { $regex: new RegExp(`^${withDot}$`, 'i') },
-        role: 'doctor',
-        isActive: true
-      }).select('-password');
-    }
-    
-    // Stratégie 4: Recherche partielle (contient le nom)
+      }
+    });
+    if (doctor) console.log('✅ Trouvé par recherche exacte');
+
+    // STRATÉGIE 2: Recherche insensible à la casse avec SQL brut
     if (!doctor) {
-      const nameParts = searchName.replace('Dr ', '').split(' ');
-      const lastName = nameParts[nameParts.length - 1];
-      
-      console.log('📥 Recherche partielle par nom de famille:', lastName);
-      
-      doctor = await User.findOne({
-        name: { $regex: new RegExp(lastName, 'i') },
-        role: 'doctor',
-        isActive: true
-      }).select('-password');
+      console.log('📥 Recherche SQL insensible à la casse...');
+      const doctors = await prisma.$queryRaw`
+        SELECT * FROM users 
+        WHERE LOWER(name) = LOWER(${cleanName})
+        AND role = 'doctor'
+        AND isActive = true
+        LIMIT 1
+      `;
+      if (doctors && doctors.length > 0) {
+        doctor = doctors[0];
+        console.log('✅ Trouvé par SQL insensible');
+      }
     }
 
-    console.log('📥 Médecin trouvé?', doctor ? 'Oui - ' + doctor.name : 'Non');
+    // STRATÉGIE 3: Recherche avec contains (pour gérer les titres comme Dr.)
+    if (!doctor) {
+      console.log('📥 Recherche avec contains...');
+      const doctors = await prisma.$queryRaw`
+        SELECT * FROM users 
+        WHERE LOWER(name) LIKE LOWER(${`%${cleanName}%`})
+        AND role = 'doctor'
+        AND isActive = true
+        LIMIT 1
+      `;
+      if (doctors && doctors.length > 0) {
+        doctor = doctors[0];
+        console.log('✅ Trouvé par contains');
+      }
+    }
+
+    // STRATÉGIE 4: Enlever le titre "Dr" ou "Dr." pour la recherche
+    if (!doctor && (cleanName.startsWith('Dr ') || cleanName.startsWith('Dr.'))) {
+      let withoutTitle = cleanName.replace(/^Dr\.?\s+/, '');
+      console.log('📥 Recherche sans titre:', withoutTitle);
+      
+      const doctors = await prisma.$queryRaw`
+        SELECT * FROM users 
+        WHERE LOWER(name) LIKE LOWER(${`%${withoutTitle}%`})
+        AND role = 'doctor'
+        AND isActive = true
+        LIMIT 1
+      `;
+      if (doctors && doctors.length > 0) {
+        doctor = doctors[0];
+        console.log('✅ Trouvé sans titre');
+      }
+    }
+
+    // STRATÉGIE 5: Recherche par nom de famille seulement
+    if (!doctor && cleanName.includes(' ')) {
+      const nameParts = cleanName.split(' ');
+      const lastName = nameParts[nameParts.length - 1];
+      console.log('📥 Recherche par nom de famille:', lastName);
+      
+      const doctors = await prisma.$queryRaw`
+        SELECT * FROM users 
+        WHERE LOWER(name) LIKE LOWER(${`%${lastName}%`})
+        AND role = 'doctor'
+        AND isActive = true
+        LIMIT 1
+      `;
+      if (doctors && doctors.length > 0) {
+        doctor = doctors[0];
+        console.log('✅ Trouvé par nom de famille');
+      }
+    }
+
+    console.log('📥 Médecin trouvé?', doctor ? `Oui - ${doctor.name}` : 'Non');
     
     if (!doctor) {
       return res.status(404).json({
@@ -237,26 +309,59 @@ exports.getDoctorByName = async (req, res) => {
       });
     }
 
-    // Récupérer les avis du médecin
-    const reviews = await Review.find({ doctor: doctor._id })
-      .populate('patient', 'name profilePicture')
-      .sort('-createdAt')
-      .limit(10);
+    // Récupérer les détails complets avec Prisma (en utilisant l'ID)
+    const fullDoctor = await prisma.user.findUnique({
+      where: { id: doctor.id },
+      include: {
+        reviewsAsDoctor: {
+          include: {
+            patient: {
+              select: {
+                id: true,
+                name: true,
+                profilePicture: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 10
+        }
+      }
+    });
 
     // Statistiques des notes
-    const ratingStats = await Review.aggregate([
-      { $match: { doctor: doctor._id } },
-      { $group: {
-        _id: '$rating',
-        count: { $sum: 1 }
-      }},
-      { $sort: { _id: -1 } }
-    ]);
+    const ratingStats = await prisma.review.groupBy({
+      by: ['rating'],
+      where: { doctorId: doctor.id },
+      _count: {
+        rating: true
+      }
+    });
+
+    // Parser les champs JSON
+    const parsedDoctor = {
+      ...fullDoctor,
+      languages: fullDoctor.languages ? JSON.parse(fullDoctor.languages) : ['Français'],
+      education: fullDoctor.education ? JSON.parse(fullDoctor.education) : [],
+      workExperience: fullDoctor.workExperience ? JSON.parse(fullDoctor.workExperience) : [],
+      insuranceAccepted: fullDoctor.insuranceAccepted ? JSON.parse(fullDoctor.insuranceAccepted) : [],
+      availableSlots: fullDoctor.availableSlots ? JSON.parse(fullDoctor.availableSlots) : []
+    };
+
+    const parsedReviews = fullDoctor.reviewsAsDoctor.map(review => ({
+      ...review,
+      tags: review.tags ? JSON.parse(review.tags) : []
+    }));
+
+    // Ne pas renvoyer le mot de passe
+    const { password, ...doctorWithoutPassword } = parsedDoctor;
 
     res.json({
       success: true,
-      doctor,
-      reviews,
+      doctor: doctorWithoutPassword,
+      reviews: parsedReviews,
       ratingStats
     });
   } catch (error) {
@@ -267,14 +372,18 @@ exports.getDoctorByName = async (req, res) => {
     });
   }
 };
-
-// @desc    Obtenir les disponibilités d'un médecin
-// @route   GET /api/doctors/:id/availability
-// @access  Public
+// ============================================
+// DISPONIBILITÉS MÉDECIN
+// ============================================
 exports.getDoctorAvailability = async (req, res) => {
   try {
-    const doctor = await User.findById(req.params.id)
-      .select('availableSlots consultationFee');
+    const doctor = await prisma.user.findUnique({
+      where: { id: parseInt(req.params.id) },
+      select: {
+        availableSlots: true,
+        consultationFee: true
+      }
+    });
 
     if (!doctor) {
       return res.status(404).json({
@@ -285,7 +394,7 @@ exports.getDoctorAvailability = async (req, res) => {
 
     res.json({
       success: true,
-      availableSlots: doctor.availableSlots,
+      availableSlots: doctor.availableSlots ? JSON.parse(doctor.availableSlots) : [],
       consultationFee: doctor.consultationFee
     });
   } catch (error) {
@@ -296,3 +405,6 @@ exports.getDoctorAvailability = async (req, res) => {
     });
   }
 };
+
+// Vérification des exports
+console.log('✅ doctorController chargé avec les fonctions:', Object.keys(module.exports));

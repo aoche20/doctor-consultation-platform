@@ -90,4 +90,15 @@ Système de notation par étoiles
 
 Navigation intuitive
 
+   Jour 4
+
+📅 Prendre rendez-vous avec un calendrier interactif
+
+🔍 Voir les créneaux disponibles en temps réel
+
+📋 Gérer leurs rendez-vous (liste, détails, annulation)
+
+🏥 Choisir le type de consultation (vidéo/audio/chat)
+
+⏰ Respecter les règles métier (délais d'annulation)
 

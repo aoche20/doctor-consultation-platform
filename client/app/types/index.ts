@@ -140,3 +140,59 @@ export interface SearchResponse {
   doctors: User[];
   pagination: Pagination;
 }
+
+export interface Appointment {
+  _id: string;
+  patient: User | string;  // Peut être l'objet User ou juste l'ID
+  doctor: User | string;    // Peut être l'objet User ou juste l'ID
+  date: string;
+  timeSlot: TimeSlot;
+  status: AppointmentStatus;
+  type: ConsultationType;
+  symptoms?: string;
+  notes?: string;
+  prescription?: Prescription;
+  paymentIntentId?: string;
+  meetingId?: string;
+  meetingLink?: string;
+  cancellationReason?: string;
+  cancelledBy?: string;
+  cancelledAt?: string;
+  reminders?: Reminder[];
+  createdAt: string;
+  updatedAt: string;
+  paymentStatus: 'pending' | 'paid' | 'refunded' | 'failed';
+  paymentAmount: number;
+  paymentMethod?: string;
+}
+
+export interface TimeSlot {
+  start: string;
+  end: string;
+}
+
+export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no-show';
+
+export type ConsultationType = 'video' | 'audio' | 'chat' | 'in-person';
+
+export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'failed';
+
+export interface Prescription {
+  medicines: Medicine[];
+  additionalNotes?: string;
+  followUpDate?: string;
+  issuedAt?: string;
+}
+
+export interface Medicine {
+  name: string;
+  dosage: string;
+  duration: string;
+  instructions?: string;
+}
+
+export interface Reminder {
+  type: 'email' | 'sms' | 'push';
+  sentAt: string;
+  status: string;
+}

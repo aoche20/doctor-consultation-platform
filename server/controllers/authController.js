@@ -1,5 +1,6 @@
-const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const prisma = require('../prisma/client');
 const { validationResult } = require('express-validator');
 
 // Générer un token JWT
@@ -14,7 +15,6 @@ const generateToken = (id, role) => {
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    // Vérifier les erreurs de validation
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ 
@@ -26,7 +26,10 @@ exports.register = async (req, res) => {
     const { name, email, password, role, specialization, consultationFee } = req.body;
 
     // Vérifier si l'utilisateur existe déjà
-    const existingUser = await User.findOne({ email });
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+
     if (existingUser) {
       return res.status(400).json({ 
         success: false, 
@@ -34,11 +37,14 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Créer l'utilisateur
+    // Hasher le mot de passe
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Préparer les données
     const userData = {
-      name,
       email,
-      password,
+      password: hashedPassword,
+      name,
       role
     };
 
@@ -52,18 +58,25 @@ exports.register = async (req, res) => {
       }
       userData.specialization = specialization;
       userData.consultationFee = consultationFee || 50;
+      // Champs JSON par défaut
+      userData.languages = JSON.stringify(['Français']);
+      userData.availableSlots = JSON.stringify([]);
+      userData.education = JSON.stringify([]);
     }
 
-    const user = await User.create(userData);
+    // Créer l'utilisateur
+    const user = await prisma.user.create({
+      data: userData
+    });
 
     // Générer le token
-    const token = generateToken(user._id, user.role);
+    const token = generateToken(user.id, user.role);
 
     res.status(201).json({
       success: true,
       token,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -76,7 +89,7 @@ exports.register = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erreur inscription:', error);
+    console.error('❌ Erreur inscription:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Erreur serveur' 
@@ -100,7 +113,10 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     // Vérifier si l'utilisateur existe
-    const user = await User.findOne({ email }).select('+password');
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
     if (!user) {
       return res.status(401).json({ 
         success: false, 
@@ -109,7 +125,7 @@ exports.login = async (req, res) => {
     }
 
     // Vérifier le mot de passe
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ 
         success: false, 
@@ -118,17 +134,19 @@ exports.login = async (req, res) => {
     }
 
     // Mettre à jour la dernière connexion
-    user.lastLogin = Date.now();
-    await user.save({ validateBeforeSave: false });
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() }
+    });
 
     // Générer le token
-    const token = generateToken(user._id, user.role);
+    const token = generateToken(user.id, user.role);
 
     res.json({
       success: true,
       token,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -141,7 +159,7 @@ exports.login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erreur connexion:', error);
+    console.error('❌ Erreur connexion:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Erreur serveur' 
@@ -154,24 +172,38 @@ exports.login = async (req, res) => {
 // @access  Private
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id }
+    });
     
     res.json({
       success: true,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
         profilePicture: user.profilePicture,
+        phoneNumber: user.phoneNumber,
+        dateOfBirth: user.dateOfBirth,
+        gender: user.gender,
+        address: user.address ? JSON.parse(user.address) : null,
         ...(user.role === 'doctor' && {
           specialization: user.specialization,
-          consultationFee: user.consultationFee
+          consultationFee: user.consultationFee,
+          experience: user.experience,
+          bio: user.bio,
+          languages: user.languages ? JSON.parse(user.languages) : ['Français'],
+          education: user.education ? JSON.parse(user.education) : [],
+          availableSlots: user.availableSlots ? JSON.parse(user.availableSlots) : [],
+          rating: user.rating,
+          totalReviews: user.totalReviews,
+          isVerified: user.isVerified
         })
       }
     });
   } catch (error) {
-    console.error('Erreur profil:', error);
+    console.error('❌ Erreur profil:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Erreur serveur' 

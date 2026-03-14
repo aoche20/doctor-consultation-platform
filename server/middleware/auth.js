@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const prisma = require('../prisma/client');
 
 exports.protect = async (req, res, next) => {
   try {
@@ -22,15 +22,18 @@ exports.protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Ajouter l'utilisateur à la requête
-      req.user = await User.findById(decoded.id).select('-password');
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id }
+      });
 
-      if (!req.user) {
+      if (!user) {
         return res.status(401).json({ 
           success: false, 
           message: 'Utilisateur non trouvé' 
         });
       }
 
+      req.user = user;
       next();
     } catch (error) {
       return res.status(401).json({ 
@@ -40,7 +43,7 @@ exports.protect = async (req, res, next) => {
     }
 
   } catch (error) {
-    console.error('Erreur auth:', error);
+    console.error('❌ Erreur auth:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Erreur serveur' 

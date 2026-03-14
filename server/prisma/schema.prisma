@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model User {
+  id             Int       @id @default(autoincrement())
+  email          String    @unique
+  password       String
+  name           String
+  role           Role      @default(patient)
+  profilePicture String?
+  phoneNumber    String?
+  dateOfBirth    DateTime?
+  gender         Gender?
+  address        Json? // Stocké comme JSON
+
+  // Champs médecin
+  specialization    String?
+  consultationFee   Float?  @default(50)
+  isVerified        Boolean @default(false)
+  bio               String? @db.Text
+  languages         Json? // Stocké comme JSON ["Français", "English"]
+  experience        Int?    @default(0)
+  education         Json? // Stocké comme JSON
+  workExperience    Json? // Stocké comme JSON
+  insuranceAccepted Json? // Stocké comme JSON
+  availableSlots    Json? // Stocké comme JSON
+
+  // Statistiques
+  rating        Float @default(0)
+  totalReviews  Int   @default(0)
+  totalPatients Int   @default(0)
+  responseRate  Float @default(0)
+  responseTime  Int   @default(0)
+
+  // Métadonnées
+  isActive  Boolean   @default(true)
+  lastLogin DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  doctorAppointments  Appointment[] @relation("doctor_appointments")
+  patientAppointments Appointment[] @relation("patient_appointments")
+  reviewsAsDoctor     Review[]      @relation("doctor_reviews")
+  reviewsAsPatient    Review[]      @relation("patient_reviews")
+
+  @@map("users")
+}
+
+model Appointment {
+  id                 Int               @id @default(autoincrement())
+  patientId          Int
+  doctorId           Int
+  patient            User              @relation("patient_appointments", fields: [patientId], references: [id])
+  doctor             User              @relation("doctor_appointments", fields: [doctorId], references: [id])
+  date               DateTime
+  timeSlot           Json // { "start": "09:00", "end": "09:30" }
+  status             AppointmentStatus @default(pending)
+  type               ConsultationType  @default(video)
+  symptoms           String?           @db.Text
+  notes              String?           @db.Text
+  prescription       Json? // Stocké comme JSON
+  paymentStatus      PaymentStatus     @default(pending)
+  paymentAmount      Float
+  paymentMethod      String?
+  paymentIntentId    String?           @unique
+  meetingId          String?
+  meetingLink        String?
+  cancellationReason String?
+  cancelledBy        Int?
+  cancelledAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  review Review?
+
+  @@map("appointments")
+}
+
+model Review {
+  id            Int         @id @default(autoincrement())
+  patientId     Int
+  doctorId      Int
+  appointmentId Int         @unique
+  patient       User        @relation("patient_reviews", fields: [patientId], references: [id])
+  doctor        User        @relation("doctor_reviews", fields: [doctorId], references: [id])
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+
+  // ✅ Correction : Suppression de @min et @max, validation dans l'application
+  rating Int // La validation (1-5) se fera dans le contrôleur
+
+  comment     String  @db.Text
+  tags        Json? // Stocké comme JSON ["Ponctuel", "À l'écoute"]
+  isAnonymous Boolean @default(false)
+  isVerified  Boolean @default(true)
+  likes       Json? // Stocké comme JSON [1, 2, 3]
+  replies     Json? // Stocké comme JSON
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reviews")
+}
+
+enum Role {
+  patient
+  doctor
+  admin
+
+  @@map("roles")
+}
+
+enum Gender {
+  male
+  female
+  other
+
+  @@map("genders")
+}
+
+enum AppointmentStatus {
+  pending
+  confirmed
+  completed
+  cancelled
+  no_show
+
+  @@map("appointment_statuses")
+}
+
+enum ConsultationType {
+  video
+  audio
+  chat
+  in_person
+
+  @@map("consultation_types")
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  refunded
+  failed
+
+  @@map("payment_statuses")
+}

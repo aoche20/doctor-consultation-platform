@@ -305,7 +305,7 @@ export default function DoctorsPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {doctors.map((doctor) => (
-                <Link href={`/doctors/${slugify(doctor.name)}`} key={doctor._id} prefetch={false}>
+                <Link href={`/doctors/${slugify(doctor.name)}`} key={doctor.id} prefetch={false}>
                   <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition cursor-pointer">
                     <div className="p-6">
                       <div className="flex items-center mb-4">
