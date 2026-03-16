@@ -29,6 +29,12 @@ export default function DashboardLayout({
     { name: 'Rendez-vous', href: '/patient/appointments', icon: CalendarIcon },
     { name: 'Trouver un médecin', href: '/doctors', icon: UserIcon },
     { name: 'Profil', href: '/patient/profile', icon: UserIcon },
+    // Dans la navigation, ajoutez
+{ 
+  name: 'Disponibilités', 
+  href: `/doctor/availability/${user?.id}`,  // ← Structure demandée
+  icon: ClockIcon 
+}
   ];
 
   return (

@@ -326,14 +326,15 @@ export default function DoctorAppointmentDetailPage() {
               
               <div className="space-y-3">
                 {appointment.status === 'confirmed' && (
-                  <button
-                    onClick={() => router.push(`/consultation/${appointment.id}`)}
-                    className="w-full px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center justify-center gap-2"
-                  >
-                    <VideoCameraIcon className="w-5 h-5" />
-                    Démarrer la consultation
-                  </button>
-                )}
+  <button
+    onClick={() => router.push(`/consultation/${appointment.id}`)}
+    className="w-full px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center justify-center gap-2"
+  >
+    <VideoCameraIcon className="w-5 h-5" />
+    Démarrer la consultation
+  </button>
+)}
+ 
 
                 <Link
                   href={`/doctor/appointments`}

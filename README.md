@@ -102,3 +102,8 @@ Navigation intuitive
 
 ⏰ Respecter les règles métier (délais d'annulation)
 
+Jour 5
+
+Consultation Vidéo avec ZEGOCLOUD
+
+Jour 6

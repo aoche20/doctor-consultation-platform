@@ -200,15 +200,15 @@ export default function AppointmentDetailPage() {
               </span>
             </div>
             
-            {canJoin() && (
-              <button
-                onClick={() => router.push(`/consultation/${appointment.id}`)}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center gap-2"
-              >
-                <VideoCameraIcon className="w-5 h-5" />
-                Rejoindre la consultation
-              </button>
-            )}
+{canJoin() && (
+  <button
+    onClick={() => router.push(`/consultation/${appointment.id}`)}
+    className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center gap-2"
+  >
+    <VideoCameraIcon className="w-5 h-5" />
+    Rejoindre la consultation
+  </button>
+)}
           </div>
         </div>
 
