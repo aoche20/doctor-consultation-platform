@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const http = require('http');
 const fs = require('fs');
+const { Server } = require('socket.io');
 
 // Importer Prisma
 const prisma = require('./prisma/client');
@@ -16,6 +17,73 @@ if (!fs.existsSync('uploads')) {
 
 const app = express();
 const server = http.createServer(app);
+// Configuration Socket.IO
+const io = new Server(server, {
+  cors: {
+    origin: 'http://localhost:3000',
+    credentials: true
+  }
+});
+
+// Stockage des connexions utilisateur
+const userSockets = new Map();
+
+io.on('connection', (socket) => {
+  console.log('🔌 Nouvelle connexion socket:', socket.id);
+
+  // Authentifier l'utilisateur
+  const userId = socket.handshake.query.userId;
+  if (userId) {
+    userSockets.set(userId, socket.id);
+    console.log(`👤 Utilisateur ${userId} connecté`);
+  }
+
+  // Rejoindre une room de conversation
+  socket.on('join-conversation', (otherUserId) => {
+    const roomId = [userId, otherUserId].sort().join('-');
+    socket.join(roomId);
+    console.log(`📦 Room rejoint: ${roomId}`);
+  });
+
+  // Envoyer un message
+  socket.on('send-message', async (data) => {
+    const { receiverId, message } = data;
+    
+    // Sauvegarder en base de données
+    // (on pourrait appeler le contrôleur ici)
+    
+    const roomId = [userId, receiverId].sort().join('-');
+    
+    // Émettre au destinataire
+    io.to(roomId).emit('new-message', {
+      ...message,
+      senderId: userId,
+      createdAt: new Date()
+    });
+
+    // Notification en temps réel
+    const receiverSocketId = userSockets.get(receiverId.toString());
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('message-notification', {
+        from: userId,
+        message: message.content.substring(0, 50)
+      });
+    }
+  });
+
+  // Déconnexion
+  socket.on('disconnect', () => {
+    console.log('🔌 Déconnexion socket:', socket.id);
+    userSockets.forEach((value, key) => {
+      if (value === socket.id) {
+        userSockets.delete(key);
+      }
+    });
+  });
+});
+
+// Rendre io accessible dans les contrôleurs
+app.set('io', io);
 
 // ============================================
 // CONFIGURATION WEBOOK STRIPE
@@ -61,6 +129,7 @@ app.use('/api/doctors', require('./routes/doctors'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/appointments', require('./routes/appointments'));
 app.use('/api/payments', require('./routes/payments'));
+app.use('/api/messages', require('./routes/messages'));
 
 // ============================================
 // ROUTE DE TEST

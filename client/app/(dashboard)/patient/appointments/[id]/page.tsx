@@ -384,114 +384,97 @@ export default function AppointmentDetailPage() {
           </div>
 
           {/* Colonne latérale - Actions */}
-          <div className="space-y-4">
-            {/* Actions disponibles */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">
-                Actions
-              </h3>
-              
-              <div className="space-y-3">
-                {canCancel() && (
-                  <button
-                    onClick={handleCancel}
-                    disabled={cancelling}
-                    className="w-full px-4 py-3 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition disabled:opacity-50"
-                  >
-                    {cancelling ? 'Annulation...' : 'Annuler ce rendez-vous'}
-                  </button>
-                )}
-                
-                {appointment.paymentStatus === 'pending' && (
-  <Link
-    href={`/payment/${appointment.id}`}
-    className="block w-full px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition text-center"
-  >
-    <CreditCardIcon className="w-5 h-5 inline-block mr-2" />
-    Procéder au paiement
-  </Link>
-)}
+          {/* Actions disponibles */}
+<div className="bg-white rounded-xl shadow-lg p-6">
+  <h3 className="font-semibold text-gray-900 mb-4">
+    Actions
+  </h3>
+  
+  <div className="space-y-3">
+    {canCancel() && (
+      <button
+        onClick={handleCancel}
+        disabled={cancelling}
+        className="w-full px-4 py-3 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition disabled:opacity-50"
+      >
+        {cancelling ? 'Annulation...' : 'Annuler ce rendez-vous'}
+      </button>
+    )}
+    
+    {/* ✅ BOUTON DE CHAT - Visible pour tous les rendez-vous non annulés/terminés */}
+    {appointment?.doctorId && appointment?.status !== 'cancelled' && appointment?.status !== 'completed' && (
+      <Link
+        href={`/patient/messages?userId=${appointment.doctorId}`}
+        className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-center flex items-center justify-center gap-2"
+      >
+        <ChatBubbleLeftIcon className="w-5 h-5" />
+        Contacter le médecin
+      </Link>
+    )}
+    
+    {appointment.paymentStatus === 'pending' && (
+      <Link
+        href={`/payment/${appointment.id}`}
+        className="block w-full px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition text-center"
+      >
+        <CreditCardIcon className="w-5 h-5 inline-block mr-2" />
+        Procéder au paiement
+      </Link>
+    )}
 
-{appointment.paymentStatus === 'paid' && (
-  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-    <p className="text-green-700 font-medium flex items-center gap-2">
-      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-      Paiement confirmé
-    </p>
-    <button
-      onClick={() => window.open(`/api/payments/invoice/${appointment.id}`, '_blank')}
-      className="mt-2 text-sm text-green-600 hover:text-green-700 flex items-center gap-1"
-    >
-      <DocumentTextIcon className="w-4 h-4" />
-      Voir la facture
-    </button>
-  </div>
-)}
+    {appointment.paymentStatus === 'paid' && (
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <p className="text-green-700 font-medium flex items-center gap-2">
+          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+          Paiement confirmé
+        </p>
+        <button
+          onClick={() => window.open(`/api/payments/invoice/${appointment.id}`, '_blank')}
+          className="mt-2 text-sm text-green-600 hover:text-green-700 flex items-center gap-1"
+        >
+          <DocumentTextIcon className="w-4 h-4" />
+          Voir la facture
+        </button>
+      </div>
+    )}
 
-{appointment.paymentStatus === 'refunded' && (
-  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-    <p className="text-orange-700 font-medium">
-      Remboursement effectué
-    </p>
-  </div>
-)}
+    {appointment.paymentStatus === 'refunded' && (
+      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+        <p className="text-orange-700 font-medium">
+          Remboursement effectué
+        </p>
+      </div>
+    )}
 
-{appointment.paymentStatus === 'failed' && (
-  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-    <p className="text-red-700 font-medium mb-2">
-      Paiement échoué
-    </p>
+    {appointment.paymentStatus === 'failed' && (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-700 font-medium mb-2">
+          Paiement échoué
+        </p>
+        <Link
+          href={`/payment/${appointment.id}`}
+          className="text-sm text-red-600 hover:text-red-700 font-medium"
+        >
+          Réessayer le paiement →
+        </Link>
+      </div>
+    )}
+
     <Link
-      href={`/payment/${appointment.id}`}
-      className="text-sm text-red-600 hover:text-red-700 font-medium"
+      href={`/patient/appointments`}
+      className="block w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-center"
     >
-      Réessayer le paiement →
+      Voir tous mes rendez-vous
+    </Link>
+
+    <Link
+      href="/doctors"
+      className="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-center"
+    >
+      Prendre un nouveau rendez-vous
     </Link>
   </div>
-)}
-
-                <Link
-                  href={`/patient/appointments`}
-                  className="block w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-center"
-                >
-                  Voir tous mes rendez-vous
-                </Link>
-
-                <Link
-                  href="/doctors"
-                  className="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-center"
-                >
-                  Prendre un nouveau rendez-vous
-                </Link>
-              </div>
-            </div>
-
-            {/* Informations complémentaires */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-3">
-                Informations
-              </h3>
-              
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">ID du rendez-vous</span>
-                  <span className="font-mono text-gray-700">{appointment.id.toString().slice(-8)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Créé le</span>
-                  <span className="text-gray-700">
-                    {new Date(appointment.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                {appointment.meetingId && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">ID réunion</span>
-                    <span className="font-mono text-gray-700">{appointment.meetingId}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+</div>
         </div>
       </div>
     </div>

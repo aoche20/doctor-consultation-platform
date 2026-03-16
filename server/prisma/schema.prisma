@@ -1,12 +1,15 @@
+// Générateur client
 generator client {
   provider = "prisma-client-js"
 }
 
+// Source de données MySQL
 datasource db {
-  provider     = "mysql"
-  url          = env("DATABASE_URL")
+  provider = "mysql"
+  url      = env("DATABASE_URL")
   relationMode = "prisma"
 }
+
 
 model User {
   id             Int       @id @default(autoincrement())
@@ -24,8 +27,8 @@ model User {
   specialization    String?
   consultationFee   Float?  @default(50)
   isVerified        Boolean @default(false)
-  bio               String? @db.Text
-  languages         Json? // Stocké comme JSON ["Français", "English"]
+  bio               String? // ✅ PLUS DE @db.Text
+  languages         Json? // Stocké comme JSON
   experience        Int?    @default(0)
   education         Json? // Stocké comme JSON
   workExperience    Json? // Stocké comme JSON
@@ -50,6 +53,8 @@ model User {
   patientAppointments Appointment[] @relation("patient_appointments")
   reviewsAsDoctor     Review[]      @relation("doctor_reviews")
   reviewsAsPatient    Review[]      @relation("patient_reviews")
+  sentMessages        Message[]     @relation("sent_messages")
+  receivedMessages    Message[]     @relation("received_messages")
 
   @@map("users")
 }
@@ -64,8 +69,8 @@ model Appointment {
   timeSlot           Json // { "start": "09:00", "end": "09:30" }
   status             AppointmentStatus @default(pending)
   type               ConsultationType  @default(video)
-  symptoms           String?           @db.Text
-  notes              String?           @db.Text
+  symptoms           String? // ✅ PLUS DE @db.Text
+  notes              String? // ✅ PLUS DE @db.Text
   prescription       Json? // Stocké comme JSON
   paymentStatus      PaymentStatus     @default(pending)
   paymentAmount      Float
@@ -81,7 +86,8 @@ model Appointment {
   updatedAt DateTime @updatedAt
 
   // Relations
-  review Review?
+  review   Review?
+  messages Message[]
 
   @@map("appointments")
 }
@@ -95,14 +101,13 @@ model Review {
   doctor        User        @relation("doctor_reviews", fields: [doctorId], references: [id])
   appointment   Appointment @relation(fields: [appointmentId], references: [id])
 
-  // ✅ Correction : Suppression de @min et @max, validation dans l'application
   rating Int // La validation (1-5) se fera dans le contrôleur
 
-  comment     String  @db.Text
-  tags        Json? // Stocké comme JSON ["Ponctuel", "À l'écoute"]
+  comment     String // ✅ PLUS DE @db.Text
+  tags        Json? // Stocké comme JSON
   isAnonymous Boolean @default(false)
   isVerified  Boolean @default(true)
-  likes       Json? // Stocké comme JSON [1, 2, 3]
+  likes       Json? // Stocké comme JSON
   replies     Json? // Stocké comme JSON
 
   createdAt DateTime @default(now())
@@ -111,6 +116,24 @@ model Review {
   @@map("reviews")
 }
 
+model Message {
+  id            Int          @id @default(autoincrement())
+  content       String // ✅ PLUS DE @db.Text
+  senderId      Int
+  receiverId    Int
+  sender        User         @relation("sent_messages", fields: [senderId], references: [id])
+  receiver      User         @relation("received_messages", fields: [receiverId], references: [id])
+  appointmentId Int? // Optionnel: lié à un rendez-vous
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  isRead        Boolean      @default(false)
+  readAt        DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("messages")
+}
+
+// Enums (inchangés)
 enum Role {
   patient
   doctor

@@ -342,6 +342,16 @@ export default function DoctorAppointmentDetailPage() {
                 >
                   Voir tous les rendez-vous
                 </Link>
+                {/* Dans la colonne latérale - Actions, après les autres boutons */}
+{appointment.status === 'confirmed' && (
+  <Link
+  href={`/doctor/messages/${appointment.patientId}`}
+  className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-center flex items-center justify-center gap-2"
+>
+  <ChatBubbleLeftIcon className="w-5 h-5" />
+  Contacter le patient
+</Link>
+)}
               </div>
             </div>
 

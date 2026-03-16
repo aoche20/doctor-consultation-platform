@@ -165,6 +165,14 @@ export default function DoctorConsultationPage() {
             </ul>
           </div>
 
+           
+<button
+  onClick={() => router.push(`/messages?user=${otherUserId}`)}
+  className="mt-4 w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+>
+  Envoyer un message au {isPatient ? 'médecin' : 'patient'}
+</button>
+
           <button
             onClick={handleStartCall}
             className="w-full bg-green-600 text-white py-4 rounded-lg font-medium hover:bg-green-700 transition text-lg"

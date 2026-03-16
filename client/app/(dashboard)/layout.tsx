@@ -8,6 +8,8 @@ import {
   CalendarIcon,
   UserIcon,
   ClockIcon,
+  ChatBubbleLeftIcon,
+  MagnifyingGlassIcon,
   ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 
@@ -19,23 +21,31 @@ export default function DashboardLayout({
   const { user, logout } = useAuth();
   const pathname = usePathname();
 
-  const navigation = user?.role === 'doctor' ? [
-    { name: 'Tableau de bord', href: '/doctor', icon: HomeIcon },
-    { name: 'Rendez-vous', href: '/doctor/appointments', icon: CalendarIcon },
-    { name: 'Disponibilités', href: '/doctor/availability', icon: ClockIcon },
-    { name: 'Profil', href: '/doctor/profile', icon: UserIcon },
-  ] : [
-    { name: 'Tableau de bord', href: '/patient', icon: HomeIcon },
-    { name: 'Rendez-vous', href: '/patient/appointments', icon: CalendarIcon },
-    { name: 'Trouver un médecin', href: '/doctors', icon: UserIcon },
-    { name: 'Profil', href: '/patient/profile', icon: UserIcon },
-    // Dans la navigation, ajoutez
-{ 
-  name: 'Disponibilités', 
-  href: `/doctor/availability/${user?.id}`,  // ← Structure demandée
-  icon: ClockIcon 
-}
-  ];
+  // Construction de la navigation selon le rôle
+  const navigation = user?.role === 'doctor' 
+    ? [ // Menu pour les médecins
+        { name: 'Tableau de bord', href: '/doctor', icon: HomeIcon },
+        { name: 'Rendez-vous', href: '/doctor/appointments', icon: CalendarIcon },
+        { 
+          name: 'Disponibilités', 
+          href: user?.id ? `/doctor/availability/${user.id}` : '/doctor/availability', 
+          icon: ClockIcon 
+        },
+        { name: 'Messages', href: '/doctor/messages', icon: ChatBubbleLeftIcon }, // ✅ Messages pour médecin
+        { name: 'Profil', href: '/doctor/profile', icon: UserIcon },
+      ]
+    : [ // Menu pour les patients
+        { name: 'Tableau de bord', href: '/patient', icon: HomeIcon },
+        { name: 'Rendez-vous', href: '/patient/appointments', icon: CalendarIcon },
+        { name: 'Trouver un médecin', href: '/doctors', icon: MagnifyingGlassIcon },
+        { name: 'Messages', href: '/patient/messages', icon: ChatBubbleLeftIcon }, // ✅ Messages pour patient
+        { name: 'Profil', href: '/patient/profile', icon: UserIcon },
+      ];
+
+  // Filtrer les liens invalides
+  const validNavigation = navigation.filter(item => 
+    !item.href.includes('undefined') && !item.href.includes('null')
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -49,8 +59,8 @@ export default function DashboardLayout({
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href;
+            {validNavigation.map((item) => {
+              const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
               return (
                 <Link
                   key={item.name}
@@ -76,7 +86,9 @@ export default function DashboardLayout({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{user?.name}</p>
-                <p className="text-xs text-gray-500">{user?.role === 'doctor' ? 'Médecin' : 'Patient'}</p>
+                <p className="text-xs text-gray-500">
+                  {user?.role === 'doctor' ? 'Médecin' : 'Patient'}
+                </p>
               </div>
             </div>
             <button

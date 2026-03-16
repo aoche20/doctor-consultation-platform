@@ -102,8 +102,79 @@ Navigation intuitive
 
 ⏰ Respecter les règles métier (délais d'annulation)
 
-Jour 5
+Jour 5 : Consultation Vidéo avec ZEGOCLOUD
 
-Consultation Vidéo avec ZEGOCLOUD
 
-Jour 6
+
+Jour 6 : Chat en Direct & Messagerie
+
+✅ Backend - Modèle et API
+Création du modèle Message dans Prisma
+
+Relations avec User et Appointment
+
+API complète pour les messages :
+
+POST /api/messages - Envoyer un message
+
+GET /api/messages/conversations - Lister les conversations
+
+GET /api/messages/conversation/:userId - Voir une conversation
+
+PUT /api/messages/read/:senderId - Marquer comme lu
+
+DELETE /api/messages/:id - Supprimer un message
+
+✅ WebSocket - Temps réel
+Configuration de Socket.IO dans le backend
+
+Gestion des connexions utilisateur
+
+Rooms de conversation individuelles
+
+Émission d'événements en temps réel
+
+Notifications de nouveaux messages
+
+✅ Frontend - Composants de chat
+Hook personnalisé useSocket pour la connexion WebSocket
+
+Composant ChatWindow avec :
+
+Affichage des messages en temps réel
+
+Gestion des envois (avec message temporaire)
+
+Évitement des doublons (Set d'IDs)
+
+Indicateurs de lecture
+
+Scroll automatique
+
+Composant ConversationList avec :
+
+Liste des conversations
+
+Badges de messages non lus
+
+Dernier message affiché
+
+Tri par date
+
+✅ Pages de messagerie
+Page /doctor/messages - Liste des conversations du médecin
+
+Page /doctor/messages/[userId] - Chat direct avec un patient
+
+Page /patient/messages - Liste des conversations du patient
+
+Page /patient/messages/[userId] - Chat direct avec un médecin
+
+Intégration dans la sidebar (menu Messages)
+
+✅ Intégration avec les rendez-vous
+Bouton "Contacter le médecin" dans les rendez-vous patient
+
+Bouton "Contacter le patient" dans les rendez-vous médecin
+
+Lien direct vers le chat avec l'ID de l'interlocuteur

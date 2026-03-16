@@ -391,6 +391,9 @@ exports.updateAppointmentStatus = async (req, res) => {
 // ============================================
 // OBTENIR UN RENDEZ-VOUS PAR ID
 // ============================================
+// ============================================
+// OBTENIR UN RENDEZ-VOUS PAR ID
+// ============================================
 exports.getAppointmentById = async (req, res) => {
   try {
     const appointmentId = parseInt(req.params.id);
@@ -401,8 +404,19 @@ exports.getAppointmentById = async (req, res) => {
     console.log('🔍 Utilisateur connecté ID:', req.user.id);
     console.log('🔍 Rôle utilisateur:', req.user.role);
 
+    // ✅ Vérification que l'ID est valide
+    if (isNaN(appointmentId)) {
+      console.log('❌ ID invalide (NaN)');
+      return res.status(400).json({
+        success: false,
+        message: 'ID de rendez-vous invalide'
+      });
+    }
+
     const appointment = await prisma.appointment.findUnique({
-      where: { id: appointmentId },
+      where: { 
+        id: appointmentId  // ✅ Maintenant c'est bien un nombre
+      },
       include: {
         patient: {
           select: {
@@ -429,15 +443,6 @@ exports.getAppointmentById = async (req, res) => {
 
     console.log('🔍 Résultat findUnique:', appointment ? 'Trouvé' : 'Non trouvé');
     
-    if (appointment) {
-      console.log('🔍 Détails rendez-vous:');
-      console.log('   - ID:', appointment.id);
-      console.log('   - Patient ID:', appointment.patientId);
-      console.log('   - Doctor ID:', appointment.doctorId);
-      console.log('   - Status:', appointment.status);
-      console.log('   - Date:', appointment.date);
-    }
-
     if (!appointment) {
       console.log('❌ Rendez-vous non trouvé en base');
       return res.status(404).json({
@@ -486,7 +491,6 @@ exports.getAppointmentById = async (req, res) => {
     });
   }
 };
-
 // ✅ Vérifiez que la fonction est bien dans les exports
 console.log('✅ appointmentController chargé, fonctions disponibles:', Object.keys(module.exports));
 // ============================================
