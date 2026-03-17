@@ -339,48 +339,151 @@ export default function AppointmentDetailPage() {
             )}
 
             {/* Prescription (si disponible) */}
-            {appointment.prescription && (
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <DocumentTextIcon className="w-5 h-5 text-blue-600" />
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Prescription
-                  </h2>
-                </div>
-                
-                {appointment.prescription.medicines?.length > 0 && (
-                  <div className="space-y-3 mb-4">
-                    {appointment.prescription.medicines.map((medicine, index) => (
-                      <div key={index} className="border-l-4 border-blue-600 pl-4 py-2">
-                        <p className="font-medium text-gray-900">{medicine.name}</p>
-                        <p className="text-sm text-gray-600">
-                          {medicine.dosage} - {medicine.duration}
-                        </p>
-                        {medicine.instructions && (
-                          <p className="text-sm text-gray-500 mt-1">
-                            {medicine.instructions}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {appointment.prescription.additionalNotes && (
-                  <div className="mt-4 pt-4 border-t">
-                    <p className="text-sm text-gray-700">
-                      {appointment.prescription.additionalNotes}
-                    </p>
-                  </div>
-                )}
-                
-                {appointment.prescription.followUpDate && (
-                  <div className="mt-4 text-sm text-gray-600">
-                    Prochain rendez-vous recommandé : {new Date(appointment.prescription.followUpDate).toLocaleDateString()}
-                  </div>
-                )}
+           {appointment.prescription && (
+  <div className="bg-white rounded-xl shadow-lg p-6">
+    {/* En-tête avec bouton de téléchargement */}
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex items-center gap-2">
+        <div className="p-2 bg-blue-100 rounded-lg">
+          <DocumentTextIcon className="w-6 h-6 text-blue-600" />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">
+            Prescription médicale
+          </h2>
+          <p className="text-sm text-gray-500">
+            Délivrée le {new Date(appointment.prescription.issuedAt).toLocaleDateString('fr-FR', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            })}
+          </p>
+        </div>
+      </div>
+      
+      {/* Bouton de téléchargement PDF */}
+      <button
+  onClick={async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      
+      const response = await fetch(`${API_URL}/api/prescriptions/${appointment.id}/pdf`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error(error.message || 'Erreur de téléchargement');
+        return;
+      }
+
+      // Convertir la réponse en blob
+      const blob = await response.blob();
+      
+      // Créer un lien de téléchargement
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `prescription-${appointment.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('❌ Erreur:', error);
+      toast.error('Erreur de téléchargement');
+    }
+  }}
+  className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition"
+>
+  <DocumentTextIcon className="w-4 h-4" />
+  Télécharger PDF
+</button>
+    </div>
+
+    {/* Informations médecin */}
+    <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+      <p className="text-sm text-gray-600 mb-1">Prescrit par</p>
+      <p className="font-semibold text-gray-900">{doctor?.name}</p>
+      <p className="text-sm text-blue-600">{doctor?.specialization}</p>
+    </div>
+
+    {/* Liste des médicaments */}
+    {appointment.prescription.medicines?.length > 0 && (
+      <div className="mb-6">
+        <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+          Médicaments prescrits
+        </h3>
+        <div className="space-y-3">
+          {appointment.prescription.medicines.map((medicine: any, index: number) => (
+            <div key={index} className="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-600">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <p className="font-semibold text-gray-900">{medicine.name}</p>
+                <p className="text-sm text-gray-600 bg-white px-3 py-1 rounded-full">
+                  {medicine.dosage}
+                </p>
               </div>
-            )}
+              {medicine.duration && (
+                <p className="text-sm text-gray-600 mt-1">
+                  <span className="font-medium">Durée :</span> {medicine.duration}
+                </p>
+              )}
+              {medicine.instructions && (
+                <p className="text-sm text-gray-500 mt-2 bg-blue-50 p-2 rounded">
+                  <span className="font-medium">Instructions :</span> {medicine.instructions}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {/* Notes complémentaires */}
+    {appointment.prescription.additionalNotes && (
+      <div className="mb-6 p-4 bg-yellow-50 rounded-lg">
+        <h3 className="text-md font-semibold text-gray-900 mb-2 flex items-center gap-2">
+          <span className="w-1 h-5 bg-yellow-500 rounded-full"></span>
+          Notes complémentaires
+        </h3>
+        <p className="text-sm text-gray-700 whitespace-pre-wrap">
+          {appointment.prescription.additionalNotes}
+        </p>
+      </div>
+    )}
+
+    {/* Date de suivi */}
+    {appointment.prescription.followUpDate && (
+      <div className="mt-6 p-4 bg-green-50 rounded-lg flex items-center gap-3">
+        <div className="p-2 bg-green-100 rounded-full">
+          <CalendarIcon className="w-5 h-5 text-green-600" />
+        </div>
+        <div>
+          <p className="text-sm text-green-800 font-medium">Prochain rendez-vous recommandé</p>
+          <p className="text-lg font-semibold text-green-900">
+            {new Date(appointment.prescription.followUpDate).toLocaleDateString('fr-FR', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            })}
+          </p>
+        </div>
+      </div>
+    )}
+
+    {/* Pied de page avec mention légale */}
+    <div className="mt-6 pt-4 border-t border-gray-200">
+      <p className="text-xs text-gray-400 text-center">
+        Document généré électroniquement - Fait foi pour prescription médicale
+      </p>
+    </div>
+  </div>
+)}
           </div>
 
           {/* Colonne latérale - Actions */}

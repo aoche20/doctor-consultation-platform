@@ -109,12 +109,40 @@ export default function DoctorAppointmentsPage() {
     }
   };
 
+  // ✅ Fonction pour annuler un rendez-vous
+  const handleCancelAppointment = async (appointmentId: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous ?')) return;
+
+    try {
+      const result = await appointmentApi.updateAppointmentStatus(
+        appointmentId.toString(),
+        'cancelled',
+        'Annulé par le médecin'
+      );
+
+      if (result.success) {
+        toast.success('Rendez-vous annulé avec succès');
+        loadAppointments();
+      } else {
+        toast.error(result.message || 'Erreur lors de l\'annulation');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      toast.error('Erreur de connexion');
+    }
+  };
+
   const canConfirm = (appointment: Appointment) => {
     return appointment.status === 'pending';
   };
 
   const canComplete = (appointment: Appointment) => {
     return appointment.status === 'confirmed';
+  };
+
+  const canCancel = (appointment: Appointment) => {
+    // ✅ Seuls les rendez-vous en attente peuvent être annulés
+    return appointment.status === 'pending';
   };
 
   if (authLoading || loading) {
@@ -313,6 +341,14 @@ export default function DoctorAppointmentsPage() {
                         Marquer comme terminé
                       </button>
                     )}
+ 
+                    <button
+                      onClick={() => router.push(`/doctor/prescription/${appointment.id}`)}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition flex items-center gap-2"
+                    >
+                      <span>📋</span>
+                      Prescription
+                    </button>
 
                     <button
                       onClick={() => router.push(`/doctor/appointments/${appointment.id}`)}
@@ -320,6 +356,16 @@ export default function DoctorAppointmentsPage() {
                     >
                       Détails
                     </button>
+
+                    {/* ✅ Bouton Annuler - Uniquement pour les rendez-vous en attente */}
+                    {canCancel(appointment) && (
+                      <button
+                        onClick={() => handleCancelAppointment(appointment.id)}
+                        className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition"
+                      >
+                        Annuler
+                      </button>
+                    )}
                   </div>
                 </div>
               );

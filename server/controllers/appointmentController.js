@@ -601,7 +601,172 @@ exports.getAvailableSlots = async (req, res) => {
     });
   }
 };
+// ============================================
+// AJOUTER UNE PRESCRIPTION À UN RENDEZ-VOUS
+// ============================================
+// @desc    Ajouter une prescription à un rendez-vous
+// @route   POST /api/appointments/:id/prescription
+// @access  Private (Doctor only)
+exports.addPrescription = async (req, res) => {
+  try {
+    const appointmentId = parseInt(req.params.id);
+    const { medicines, additionalNotes, followUpDate } = req.body;
 
+    // Vérifier que le rendez-vous existe
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        doctor: true,
+        patient: true
+      }
+    });
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Rendez-vous non trouvé'
+      });
+    }
+
+    // Vérifier que l'utilisateur est le médecin du rendez-vous
+    if (appointment.doctorId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Seul le médecin peut ajouter une prescription'
+      });
+    }
+
+    // Vérifier que le rendez-vous est terminé ou confirmé
+    if (appointment.status !== 'completed' && appointment.status !== 'confirmed') {
+      return res.status(400).json({
+        success: false,
+        message: 'La prescription ne peut être ajoutée qu\'à un rendez-vous terminé ou confirmé'
+      });
+    }
+
+    // Créer la prescription
+    const prescription = {
+      medicines: medicines || [],
+      additionalNotes: additionalNotes || '',
+      followUpDate: followUpDate || null,
+      issuedAt: new Date()
+    };
+
+    // Mettre à jour le rendez-vous
+    const updatedAppointment = await prisma.appointment.update({
+      where: { id: appointmentId },
+      data: {
+        prescription: JSON.stringify(prescription)
+      },
+      include: {
+        patient: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        doctor: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Prescription ajoutée avec succès',
+      prescription,
+      appointment: updatedAppointment
+    });
+
+  } catch (error) {
+    console.error('❌ Erreur addPrescription:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur'
+    });
+  }
+};
+
+// ============================================
+// RÉCUPÉRER LA PRESCRIPTION D'UN RENDEZ-VOUS
+// ============================================
+// @desc    Récupérer la prescription d'un rendez-vous
+// @route   GET /api/appointments/:id/prescription
+// @access  Private (Patient or Doctor)
+exports.getPrescription = async (req, res) => {
+  try {
+    const appointmentId = parseInt(req.params.id);
+
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        patient: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            specialization: true
+          }
+        }
+      }
+    });
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Rendez-vous non trouvé'
+      });
+    }
+
+    // Vérifier les permissions
+    const isPatient = appointment.patientId === req.user.id;
+    const isDoctor = appointment.doctorId === req.user.id;
+
+    if (!isPatient && !isDoctor) {
+      return res.status(403).json({
+        success: false,
+        message: 'Non autorisé'
+      });
+    }
+
+    if (!appointment.prescription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Aucune prescription trouvée pour ce rendez-vous'
+      });
+    }
+
+    const prescription = JSON.parse(appointment.prescription);
+
+    res.json({
+      success: true,
+      prescription,
+      appointment: {
+        id: appointment.id,
+        date: appointment.date,
+        doctor: appointment.doctor,
+        patient: appointment.patient
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Erreur getPrescription:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur'
+    });
+  }
+};
 // ============================================
 // VÉRIFICATION DES EXPORTS
 // ============================================

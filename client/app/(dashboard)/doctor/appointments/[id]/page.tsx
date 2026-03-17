@@ -319,41 +319,77 @@ export default function DoctorAppointmentDetailPage() {
           {/* Colonne latérale - Actions */}
           <div className="space-y-4">
             {/* Actions rapides */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">
-                Actions
-              </h3>
-              
-              <div className="space-y-3">
-                {appointment.status === 'confirmed' && (
-  <button
-    onClick={() => router.push(`/consultation/${appointment.id}`)}
-    className="w-full px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center justify-center gap-2"
-  >
-    <VideoCameraIcon className="w-5 h-5" />
-    Démarrer la consultation
-  </button>
-)}
- 
+            {/* Actions rapides */}
+<div className="bg-white rounded-xl shadow-lg p-6">
+  <h3 className="font-semibold text-gray-900 mb-4">
+    Actions
+  </h3>
+  
+  <div className="space-y-3">
+    {appointment.status === 'confirmed' && (
+      <button
+        onClick={() => router.push(`/consultation/${appointment.id}`)}
+        className="w-full px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center justify-center gap-2"
+      >
+        <VideoCameraIcon className="w-5 h-5" />
+        Démarrer la consultation
+      </button>
+    )}
+    
+    {/* ✅ BOUTON PRESCRIPTION - Afficher si le rendez-vous est terminé ET pas de prescription */}
+    {appointment?.status === 'completed' && !appointment?.prescription && (
+      <Link
+        href={`/doctor/prescription/${appointment.id}`}
+        className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition text-center flex items-center justify-center gap-2"
+      >
+        <DocumentTextIcon className="w-5 h-5" />
+        Ajouter une prescription
+      </Link>
+    )}
 
-                <Link
-                  href={`/doctor/appointments`}
-                  className="block w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-center"
-                >
-                  Voir tous les rendez-vous
-                </Link>
-                {/* Dans la colonne latérale - Actions, après les autres boutons */}
-{appointment.status === 'confirmed' && (
-  <Link
-  href={`/doctor/messages/${appointment.patientId}`}
-  className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-center flex items-center justify-center gap-2"
->
-  <ChatBubbleLeftIcon className="w-5 h-5" />
-  Contacter le patient
-</Link>
-)}
-              </div>
-            </div>
+    {/* ✅ SI PRESCRIPTION EXISTE DÉJÀ */}
+    {appointment?.prescription && (
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <p className="text-green-700 font-medium flex items-center gap-2">
+          <DocumentTextIcon className="w-5 h-5" />
+          Prescription déjà ajoutée
+        </p>
+        <Link
+          href={`/doctor/prescription/${appointment.id}`}
+          className="mt-2 text-sm text-green-600 hover:text-green-700 flex items-center gap-1"
+        >
+          <DocumentTextIcon className="w-4 h-4" />
+          Voir/Modifier
+        </Link>
+        <button
+        onClick={() => window.open(`/api/prescriptions/${appointment.id}/pdf`, '_blank')}
+        className="text-sm text-green-600 hover:text-green-700 flex items-center gap-1"
+      >
+        <DocumentTextIcon className="w-4 h-4" />
+        PDF
+      </button>
+      </div>
+    )}
+
+    {/* ✅ BOUTON MESSAGES - Afficher pour tous les statuts sauf annulé */}
+    {appointment.status !== 'cancelled' && (
+      <Link
+        href={`/doctor/messages/${appointment.patientId}`}
+        className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-center flex items-center justify-center gap-2"
+      >
+        <ChatBubbleLeftIcon className="w-5 h-5" />
+        Contacter le patient
+      </Link>
+    )}
+
+    <Link
+      href={`/doctor/appointments`}
+      className="block w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-center"
+    >
+      Voir tous les rendez-vous
+    </Link>
+  </div>
+</div>
 
             {/* Informations complémentaires */}
             <div className="bg-white rounded-xl shadow-lg p-6">

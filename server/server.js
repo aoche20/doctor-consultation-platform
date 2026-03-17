@@ -123,6 +123,7 @@ app.use((req, res, next) => {
 // ============================================
 // ROUTES
 // ============================================
+app.use('/api/prescriptions', require('./routes/prescriptions'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/doctors', require('./routes/doctors'));
@@ -130,6 +131,7 @@ app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/appointments', require('./routes/appointments'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/messages', require('./routes/messages'));
+ 
 
 // ============================================
 // ROUTE DE TEST
@@ -141,7 +143,7 @@ app.get('/', async (req, res) => {
     res.json({ 
       message: '🚀 API Doctor Consultation Platform',
       status: 'running',
-      database: 'MongoDB with Prisma',
+      database: 'Mysql with Prisma',
       connection: 'OK'
     });
   } catch (error) {

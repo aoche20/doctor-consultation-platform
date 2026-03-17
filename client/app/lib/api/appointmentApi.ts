@@ -111,6 +111,7 @@ class AppointmentApi {
     }
   }
 
+  
   async updateAppointmentStatus(appointmentId: string, status: string, reason?: string): Promise<{
     success: boolean;
     appointment?: Appointment;
@@ -128,6 +129,49 @@ class AppointmentApi {
       return { success: false, message: 'Erreur de connexion' };
     }
   }
+  async addPrescription(appointmentId: number, data: {
+  medicines: Array<{
+    name: string;
+    dosage: string;
+    duration?: string;
+    instructions?: string;
+  }>;
+  additionalNotes?: string;
+  followUpDate?: string;
+}): Promise<{
+  success: boolean;
+  message?: string;
+  prescription?: any;
+}> {
+  try {
+    const response = await fetch(`${API_URL}/api/appointments/${appointmentId}/prescription`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Error adding prescription:', error);
+    return { success: false, message: 'Erreur de connexion' };
+  }
+}
+
+async getPrescription(appointmentId: number): Promise<{
+  success: boolean;
+  prescription?: any;
+  appointment?: any;
+  message?: string;
+}> {
+  try {
+    const response = await fetch(`${API_URL}/api/appointments/${appointmentId}/prescription`, {
+      headers: this.getHeaders(),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Error getting prescription:', error);
+    return { success: false, message: 'Erreur de connexion' };
+  }
+}
 }
 
 export const appointmentApi = new AppointmentApi();
