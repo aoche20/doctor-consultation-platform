@@ -1,5 +1,5 @@
 const prisma = require('../prisma/client');
-
+const notificationService = require('../services/notificationService');
 // ============================================
 // CRÉER UN RENDEZ-VOUS
 // ============================================
@@ -674,6 +674,18 @@ exports.addPrescription = async (req, res) => {
         }
       }
     });
+
+    // ✅ NOTIFICATION - Envoyer après la mise à jour réussie
+    try {
+      await notificationService.sendPrescriptionNotification(
+        updatedAppointment, 
+        updatedAppointment.patient, 
+        updatedAppointment.doctor
+      );
+    } catch (notifError) {
+      console.error('❌ Erreur envoi notification prescription:', notifError);
+      // On ne bloque pas la réponse même si la notification échoue
+    }
 
     res.json({
       success: true,

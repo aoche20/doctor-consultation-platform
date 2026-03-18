@@ -56,13 +56,22 @@ exports.sendMessage = async (req, res) => {
         }
       }
     });
-    // Ici, on pourrait émettre un événement WebSocket
-    // pour notifier le destinataire en temps réel
+
+    // ✅ ENVOI DE NOTIFICATION - DÉPLACÉ ICI APRÈS LA CRÉATION DU MESSAGE
+    try {
+      const sender = message.sender; // Déjà inclus dans le message
+      const receiver = message.receiver; // Déjà inclus dans le message
+      
+      await notificationService.sendNewMessageNotification(message, sender, receiver);
+    } catch (notifError) {
+      console.error('❌ Erreur envoi notification message:', notifError);
+      // On ne bloque pas la réponse même si la notification échoue
+    }
+
+    // Émettre un événement WebSocket pour notifier le destinataire en temps réel
     const io = req.app.get('io');
     const roomId = [req.user.id, parseInt(receiverId)].sort().join('-');
     io.to(roomId).emit('new-message', message);
-
-    
 
     res.status(201).json({
       success: true,

@@ -55,6 +55,7 @@ model User {
   reviewsAsPatient    Review[]      @relation("patient_reviews")
   sentMessages        Message[]     @relation("sent_messages")
   receivedMessages    Message[]     @relation("received_messages")
+  notifications      Notification[] @relation("user_notifications")
 
   @@map("users")
 }
@@ -133,6 +134,21 @@ model Message {
   @@map("messages")
 }
 
+model Notification {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation("user_notifications", fields: [userId], references: [id])  // Relation corrigée
+  type        NotificationType
+  title       String
+  message     String
+  data        Json?
+  isRead      Boolean  @default(false)
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  @@map("notifications")
+}
+
 // Enums (inchangés)
 enum Role {
   patient
@@ -176,4 +192,16 @@ enum PaymentStatus {
   failed
 
   @@map("payment_statuses")
+}
+
+
+enum NotificationType {
+  APPOINTMENT_REMINDER
+  APPOINTMENT_CONFIRMATION
+  APPOINTMENT_CANCELLATION
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  NEW_MESSAGE
+  PRESCRIPTION_ADDED
+  REVIEW_RECEIVED
 }

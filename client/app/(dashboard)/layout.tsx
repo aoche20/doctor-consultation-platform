@@ -10,6 +10,7 @@ import {
   ClockIcon,
   ChatBubbleLeftIcon,
   MagnifyingGlassIcon,
+  ChartBarIcon,  // ✅ Ajouté pour les statistiques
   ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 
@@ -24,21 +25,23 @@ export default function DashboardLayout({
   // Construction de la navigation selon le rôle
   const navigation = user?.role === 'doctor' 
     ? [ // Menu pour les médecins
-        { name: 'Tableau de bord', href: '/doctor', icon: HomeIcon },
+        { name: 'Tableau de bord', href: '/doctor/stats', icon: HomeIcon },
         { name: 'Rendez-vous', href: '/doctor/appointments', icon: CalendarIcon },
         { 
           name: 'Disponibilités', 
           href: user?.id ? `/doctor/availability/${user.id}` : '/doctor/availability', 
           icon: ClockIcon 
         },
-        { name: 'Messages', href: '/doctor/messages', icon: ChatBubbleLeftIcon }, // ✅ Messages pour médecin
+        //{ name: 'Statistiques', href: '/doctor/stats', icon: ChartBarIcon },  // ✅ NOUVEAU
+        { name: 'Messages', href: '/doctor/messages', icon: ChatBubbleLeftIcon },
         { name: 'Profil', href: '/doctor/profile', icon: UserIcon },
       ]
     : [ // Menu pour les patients
-        { name: 'Tableau de bord', href: '/patient', icon: HomeIcon },
+        { name: 'Tableau de bord', href: '/patient/stats', icon: HomeIcon },
         { name: 'Rendez-vous', href: '/patient/appointments', icon: CalendarIcon },
         { name: 'Trouver un médecin', href: '/doctors', icon: MagnifyingGlassIcon },
-        { name: 'Messages', href: '/patient/messages', icon: ChatBubbleLeftIcon }, // ✅ Messages pour patient
+        { name: 'Mon historique', href: '/patient/stats', icon: ChartBarIcon },  // ✅ NOUVEAU
+        { name: 'Messages', href: '/patient/messages', icon: ChatBubbleLeftIcon },
         { name: 'Profil', href: '/patient/profile', icon: UserIcon },
       ];
 

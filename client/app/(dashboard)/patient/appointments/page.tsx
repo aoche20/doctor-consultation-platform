@@ -126,7 +126,7 @@ export default function PatientAppointmentsPage() {
                 : 'bg-white text-gray-700 hover:bg-gray-50'
             }`}
           >
-            À venir
+            Tous
           </button>
           <button
             onClick={() => setFilter('pending')}

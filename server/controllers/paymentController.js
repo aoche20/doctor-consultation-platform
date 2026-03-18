@@ -134,6 +134,8 @@ async function handlePaymentSuccess(paymentIntent) {
   try {
     const { appointmentId } = paymentIntent.metadata;
     
+    console.log('💰 Paiement réussi pour le rendez-vous:', appointmentId);
+    
     if (!appointmentId) {
       console.log('❌ Pas d\'appointmentId dans les metadata');
       return;
@@ -145,21 +147,21 @@ async function handlePaymentSuccess(paymentIntent) {
       data: {
         paymentStatus: 'paid',
         paymentIntentId: paymentIntent.id,
-        status: 'confirmed' // Confirmer automatiquement le rendez-vous
+        status: 'confirmed' // ✅ Confirmer automatiquement le rendez-vous
       }
     });
 
     if (appointment) {
-      console.log(`✅ Paiement réussi pour le rendez-vous ${appointmentId}`);
+      console.log(`✅ Rendez-vous ${appointmentId} mis à jour: paiement confirmé, statut confirmé`);
       
-      // Ici, vous pourriez envoyer un email de confirmation
-      // sendConfirmationEmail(appointment);
+      // Envoyer une notification au patient
+      const notificationService = require('../services/notificationService');
+      await notificationService.sendPaymentSuccessNotification(appointment, appointment.patient);
     }
   } catch (error) {
     console.error('❌ Erreur handlePaymentSuccess:', error);
   }
 }
-
 async function handlePaymentFailure(paymentIntent) {
   try {
     const { appointmentId } = paymentIntent.metadata;

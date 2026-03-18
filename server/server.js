@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const http = require('http');
 const fs = require('fs');
 const { Server } = require('socket.io');
+require('./cron/reminderJobs');
 
 // Importer Prisma
 const prisma = require('./prisma/client');
@@ -131,8 +132,9 @@ app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/appointments', require('./routes/appointments'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/messages', require('./routes/messages'));
+app.use('/api/notifications', require('./routes/notifications'));
  
-
+app.use('/api/stats', require('./routes/stats'));
 // ============================================
 // ROUTE DE TEST
 // ============================================

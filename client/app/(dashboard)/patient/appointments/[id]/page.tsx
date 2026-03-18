@@ -6,7 +6,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/app/lib/hooks/useAuth';
 import { appointmentApi } from '@/app/lib/api/appointmentApi';
-import { DocumentTextIcon } from '@heroicons/react/24/outline';
 import { Appointment } from '@/app/types';
 import {
   CalendarIcon,
@@ -15,14 +14,18 @@ import {
   PhoneIcon,
   ChatBubbleLeftIcon,
   CurrencyEuroIcon,
-  DocumentIcon,        // ✅ Remplacé par DocumentIcon
+  DocumentIcon,
   ArrowLeftIcon,
   PencilIcon,
-  CreditCardIcon,      // ✅ Ajouté pour le paiement
-  CheckCircleIcon      // ✅ Ajouté pour les statuts
+  CreditCardIcon,
+  CheckCircleIcon,
+  DocumentTextIcon,
+  StarIcon
 } from '@heroicons/react/24/outline';
-import { StarIcon } from '@heroicons/react/20/solid';
+import { StarIcon as StarIconSolid } from '@heroicons/react/20/solid';
 import toast from 'react-hot-toast';
+import ReviewForm from '@/app/components/reviews/ReviewForm';
+import ReviewList from '@/app/components/reviews/ReviewList';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -52,37 +55,34 @@ const TYPE_LABELS = {
 };
 
 export default function AppointmentDetailPage() {
+  // ✅ 1. TOUS LES HOOKS EN PREMIER
   const params = useParams();
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false); // ✅ Hook ici
 
   const appointmentId = params?.id as string;
 
+  // ✅ 2. LES useEffects APRÈS
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
     } else if (user) {
       loadAppointment();
     }
-  }, [user, authLoading, appointmentId]);
+  }, [user, authLoading, appointmentId, router]);
 
- // ✅ VERSION CORRIGÉE
   const loadAppointment = async () => {
     setLoading(true);
     try {
-      console.log('📡 Chargement du rendez-vous ID:', appointmentId);
-      
       const result = await appointmentApi.getAppointmentById(appointmentId);
-      console.log('📡 Résultat API:', result);
       
       if (result.success && result.appointment) {
-        console.log('✅ Rendez-vous trouvé:', result.appointment);
         setAppointment(result.appointment);
       } else {
-        console.log('❌ Rendez-vous non trouvé:', result.message);
         toast.error(result.message || 'Rendez-vous non trouvé');
         router.push('/patient/appointments');
       }
@@ -93,6 +93,7 @@ export default function AppointmentDetailPage() {
       setLoading(false);
     }
   };
+
   const handleCancel = async () => {
     if (!confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous ?')) return;
 
@@ -106,7 +107,6 @@ export default function AppointmentDetailPage() {
 
       if (result.success) {
         toast.success('Rendez-vous annulé avec succès');
-        // Recharger les données
         loadAppointment();
       } else {
         toast.error(result.message || 'Erreur lors de l\'annulation');
@@ -138,7 +138,6 @@ export default function AppointmentDetailPage() {
     const now = new Date();
     const diffInMinutes = (appointmentDate.getTime() - now.getTime()) / (1000 * 60);
     
-    // Peut rejoindre 5 minutes avant et jusqu'à 30 minutes après
     return diffInMinutes <= 5 && diffInMinutes >= -30;
   };
 
@@ -151,6 +150,7 @@ export default function AppointmentDetailPage() {
     });
   };
 
+  // ✅ 3. RENDU CONDITIONNEL
   if (authLoading || loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -173,9 +173,11 @@ export default function AppointmentDetailPage() {
     );
   }
 
+  // ✅ 4. VARIABLES DÉRIVÉES APRÈS LES VÉRIFICATIONS
   const doctor = typeof appointment.doctor === 'object' ? appointment.doctor : null;
   const TypeIcon = TYPE_ICONS[appointment.type as keyof typeof TYPE_ICONS] || VideoCameraIcon;
 
+  // ✅ 5. RENDU FINAL
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
@@ -200,15 +202,15 @@ export default function AppointmentDetailPage() {
               </span>
             </div>
             
-{canJoin() && (
-  <button
-    onClick={() => router.push(`/consultation/${appointment.id}`)}
-    className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center gap-2"
-  >
-    <VideoCameraIcon className="w-5 h-5" />
-    Rejoindre la consultation
-  </button>
-)}
+            {canJoin() && (
+              <button
+                onClick={() => router.push(`/consultation/${appointment.id}`)}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center gap-2"
+              >
+                <VideoCameraIcon className="w-5 h-5" />
+                Rejoindre la consultation
+              </button>
+            )}
           </div>
         </div>
 
@@ -245,7 +247,7 @@ export default function AppointmentDetailPage() {
                       <div className="flex items-center gap-1 mt-2">
                         <div className="flex">
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <StarIcon
+                            <StarIconSolid
                               key={star}
                               className={`w-4 h-4 ${
                                 star <= doctor.rating! ? 'text-yellow-400' : 'text-gray-200'
@@ -307,22 +309,39 @@ export default function AppointmentDetailPage() {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <CurrencyEuroIcon className="w-5 h-5 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500">Prix</p>
-                    <p className="font-medium text-gray-900">
-                      {appointment.paymentAmount} €
-                    </p>
-                    <p className={`text-xs mt-1 ${
-                      appointment.paymentStatus === 'paid' 
-                        ? 'text-green-600' 
-                        : 'text-yellow-600'
-                    }`}>
-                      {appointment.paymentStatus === 'paid' ? 'Payé' : 'En attente de paiement'}
-                    </p>
-                  </div>
-                </div>
+                {/* Dans la section des détails de la consultation */}
+<div className="flex items-start gap-3">
+  <CurrencyEuroIcon className="w-5 h-5 text-gray-400 mt-0.5" />
+  <div>
+    <p className="text-sm text-gray-500">Prix</p>
+    <p className="font-medium text-gray-900">
+      {appointment.paymentAmount} €
+    </p>
+    <div className={`flex items-center gap-2 mt-1 ${
+      appointment.paymentStatus === 'paid' 
+        ? 'text-green-600' 
+        : 'text-yellow-600'
+    }`}>
+      {/* Badge de statut de paiement */}
+      {appointment.paymentStatus === 'paid' ? (
+        <>
+          <CheckCircleIcon className="w-4 h-4" />
+          <span className="text-sm font-medium">Paiement effectué</span>
+        </>
+      ) : appointment.paymentStatus === 'pending' ? (
+        <>
+          <ClockIcon className="w-4 h-4" />
+          <span className="text-sm font-medium">En attente de paiement</span>
+        </>
+      ) : appointment.paymentStatus === 'refunded' ? (
+        <>
+          <CurrencyEuroIcon className="w-4 h-4" />
+          <span className="text-sm font-medium">Remboursé</span>
+        </>
+      ) : null}
+    </div>
+  </div>
+</div>
               </div>
             </div>
 
@@ -338,246 +357,208 @@ export default function AppointmentDetailPage() {
               </div>
             )}
 
-            {/* Prescription (si disponible) */}
-           {appointment.prescription && (
-  <div className="bg-white rounded-xl shadow-lg p-6">
-    {/* En-tête avec bouton de téléchargement */}
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-      <div className="flex items-center gap-2">
-        <div className="p-2 bg-blue-100 rounded-lg">
-          <DocumentTextIcon className="w-6 h-6 text-blue-600" />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">
-            Prescription médicale
-          </h2>
-          <p className="text-sm text-gray-500">
-            Délivrée le {new Date(appointment.prescription.issuedAt).toLocaleDateString('fr-FR', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            })}
-          </p>
-        </div>
-      </div>
-      
-      {/* Bouton de téléchargement PDF */}
-      <button
-  onClick={async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      
-      const response = await fetch(`${API_URL}/api/prescriptions/${appointment.id}/pdf`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        toast.error(error.message || 'Erreur de téléchargement');
-        return;
-      }
-
-      // Convertir la réponse en blob
-      const blob = await response.blob();
-      
-      // Créer un lien de téléchargement
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `prescription-${appointment.id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      
-    } catch (error) {
-      console.error('❌ Erreur:', error);
-      toast.error('Erreur de téléchargement');
-    }
-  }}
-  className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition"
->
-  <DocumentTextIcon className="w-4 h-4" />
-  Télécharger PDF
-</button>
-    </div>
-
-    {/* Informations médecin */}
-    <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-      <p className="text-sm text-gray-600 mb-1">Prescrit par</p>
-      <p className="font-semibold text-gray-900">{doctor?.name}</p>
-      <p className="text-sm text-blue-600">{doctor?.specialization}</p>
-    </div>
-
-    {/* Liste des médicaments */}
-    {appointment.prescription.medicines?.length > 0 && (
-      <div className="mb-6">
-        <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2">
-          <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
-          Médicaments prescrits
-        </h3>
-        <div className="space-y-3">
-          {appointment.prescription.medicines.map((medicine: any, index: number) => (
-            <div key={index} className="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-600">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <p className="font-semibold text-gray-900">{medicine.name}</p>
-                <p className="text-sm text-gray-600 bg-white px-3 py-1 rounded-full">
-                  {medicine.dosage}
-                </p>
+            {/* Prescription */}
+            {appointment.prescription && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <DocumentTextIcon className="w-5 h-5 text-blue-600" />
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Prescription
+                  </h2>
+                </div>
+                
+                {appointment.prescription.medicines?.length > 0 && (
+                  <div className="space-y-3 mb-4">
+                    {appointment.prescription.medicines.map((medicine: any, index: number) => (
+                      <div key={index} className="border-l-4 border-blue-600 pl-4 py-2">
+                        <p className="font-medium text-gray-900">{medicine.name}</p>
+                        <p className="text-sm text-gray-600">
+                          {medicine.dosage} - {medicine.duration}
+                        </p>
+                        {medicine.instructions && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            {medicine.instructions}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {appointment.prescription.additionalNotes && (
+                  <div className="mt-4 pt-4 border-t">
+                    <p className="text-sm text-gray-700">
+                      {appointment.prescription.additionalNotes}
+                    </p>
+                  </div>
+                )}
+                
+                {appointment.prescription.followUpDate && (
+                  <div className="mt-4 text-sm text-gray-600">
+                    Prochain rendez-vous recommandé : {new Date(appointment.prescription.followUpDate).toLocaleDateString()}
+                  </div>
+                )}
               </div>
-              {medicine.duration && (
-                <p className="text-sm text-gray-600 mt-1">
-                  <span className="font-medium">Durée :</span> {medicine.duration}
-                </p>
-              )}
-              {medicine.instructions && (
-                <p className="text-sm text-gray-500 mt-2 bg-blue-50 p-2 rounded">
-                  <span className="font-medium">Instructions :</span> {medicine.instructions}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
+            )}
 
-    {/* Notes complémentaires */}
-    {appointment.prescription.additionalNotes && (
-      <div className="mb-6 p-4 bg-yellow-50 rounded-lg">
-        <h3 className="text-md font-semibold text-gray-900 mb-2 flex items-center gap-2">
-          <span className="w-1 h-5 bg-yellow-500 rounded-full"></span>
-          Notes complémentaires
-        </h3>
-        <p className="text-sm text-gray-700 whitespace-pre-wrap">
-          {appointment.prescription.additionalNotes}
-        </p>
-      </div>
-    )}
+            {/* ✅ Formulaire d'avis pour les rendez-vous terminés */}
+            {appointment.status === 'completed' && !appointment.review && (
+              <div className="mt-6">
+                {!showReviewForm ? (
+                  <button
+                    onClick={() => setShowReviewForm(true)}
+                    className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-4 px-6 rounded-xl font-medium hover:from-purple-700 hover:to-purple-800 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
+                  >
+                    <StarIcon className="w-5 h-5" />
+                    Donner mon avis sur cette consultation
+                  </button>
+                ) : (
+                  <ReviewForm
+                    appointmentId={appointment.id}
+                    doctorId={appointment.doctorId}
+                    doctorName={doctor?.name || ''}
+                    onSuccess={() => {
+                      setShowReviewForm(false);
+                      loadAppointment();
+                    }}
+                    onCancel={() => setShowReviewForm(false)}
+                  />
+                )}
+              </div>
+            )}
 
-    {/* Date de suivi */}
-    {appointment.prescription.followUpDate && (
-      <div className="mt-6 p-4 bg-green-50 rounded-lg flex items-center gap-3">
-        <div className="p-2 bg-green-100 rounded-full">
-          <CalendarIcon className="w-5 h-5 text-green-600" />
-        </div>
-        <div>
-          <p className="text-sm text-green-800 font-medium">Prochain rendez-vous recommandé</p>
-          <p className="text-lg font-semibold text-green-900">
-            {new Date(appointment.prescription.followUpDate).toLocaleDateString('fr-FR', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            })}
-          </p>
-        </div>
-      </div>
-    )}
-
-    {/* Pied de page avec mention légale */}
-    <div className="mt-6 pt-4 border-t border-gray-200">
-      <p className="text-xs text-gray-400 text-center">
-        Document généré électroniquement - Fait foi pour prescription médicale
-      </p>
-    </div>
-  </div>
-)}
+            {/* Afficher les avis existants */}
+            {appointment.review && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Votre avis</h3>
+                <ReviewList 
+                  reviews={[appointment.review]} 
+                  doctorId={appointment.doctorId}
+                  currentUserId={user?.id}
+                />
+              </div>
+            )}
           </div>
 
           {/* Colonne latérale - Actions */}
-          {/* Actions disponibles */}
-<div className="bg-white rounded-xl shadow-lg p-6">
-  <h3 className="font-semibold text-gray-900 mb-4">
-    Actions
-  </h3>
-  
-  <div className="space-y-3">
-    {canCancel() && (
-      <button
-        onClick={handleCancel}
-        disabled={cancelling}
-        className="w-full px-4 py-3 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition disabled:opacity-50"
-      >
-        {cancelling ? 'Annulation...' : 'Annuler ce rendez-vous'}
-      </button>
-    )}
-    
-    {/* ✅ BOUTON DE CHAT - Visible pour tous les rendez-vous non annulés/terminés */}
-    {appointment?.doctorId && appointment?.status !== 'cancelled' && appointment?.status !== 'completed' && (
-      <Link
-        href={`/patient/messages?userId=${appointment.doctorId}`}
-        className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-center flex items-center justify-center gap-2"
-      >
-        <ChatBubbleLeftIcon className="w-5 h-5" />
-        Contacter le médecin
-      </Link>
-    )}
-    
-    {appointment.paymentStatus === 'pending' && (
-      <Link
-        href={`/payment/${appointment.id}`}
-        className="block w-full px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition text-center"
-      >
-        <CreditCardIcon className="w-5 h-5 inline-block mr-2" />
-        Procéder au paiement
-      </Link>
-    )}
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">
+                Actions
+              </h3>
+              
+              <div className="space-y-3">
+                {canCancel() && (
+                  <button
+                    onClick={handleCancel}
+                    disabled={cancelling}
+                    className="w-full px-4 py-3 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition disabled:opacity-50"
+                  >
+                    {cancelling ? 'Annulation...' : 'Annuler ce rendez-vous'}
+                  </button>
+                )}
+                
+                {appointment?.doctorId && appointment?.status !== 'cancelled' && appointment?.status !== 'completed' && (
+                  <Link
+                    href={`/patient/messages?userId=${appointment.doctorId}`}
+                    className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-center flex items-center justify-center gap-2"
+                  >
+                    <ChatBubbleLeftIcon className="w-5 h-5" />
+                    Contacter le médecin
+                  </Link>
+                )}
+                
+               {/* ✅ Le bouton de paiement ne doit apparaître que si le statut est 'pending' */}
+{appointment.paymentStatus === 'pending' && (
+  <Link
+    href={`/payment/${appointment.id}`}
+    className="block w-full px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition text-center"
+  >
+    <CreditCardIcon className="w-5 h-5 inline-block mr-2" />
+    Procéder au paiement
+  </Link>
+)}
 
-    {appointment.paymentStatus === 'paid' && (
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <p className="text-green-700 font-medium flex items-center gap-2">
-          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-          Paiement confirmé
-        </p>
-        <button
-          onClick={() => window.open(`/api/payments/invoice/${appointment.id}`, '_blank')}
-          className="mt-2 text-sm text-green-600 hover:text-green-700 flex items-center gap-1"
-        >
-          <DocumentTextIcon className="w-4 h-4" />
-          Voir la facture
-        </button>
-      </div>
-    )}
+                {appointment.paymentStatus === 'paid' && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p className="text-green-700 font-medium flex items-center gap-2">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      Paiement confirmé
+                    </p>
+                    <button
+                      onClick={() => window.open(`/api/payments/invoice/${appointment.id}`, '_blank')}
+                      className="mt-2 text-sm text-green-600 hover:text-green-700 flex items-center gap-1"
+                    >
+                      <DocumentTextIcon className="w-4 h-4" />
+                      Voir la facture
+                    </button>
+                  </div>
+                )}
 
-    {appointment.paymentStatus === 'refunded' && (
-      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-        <p className="text-orange-700 font-medium">
-          Remboursement effectué
-        </p>
-      </div>
-    )}
+                {appointment.paymentStatus === 'refunded' && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <p className="text-orange-700 font-medium">
+                      Remboursement effectué
+                    </p>
+                  </div>
+                )}
 
-    {appointment.paymentStatus === 'failed' && (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-700 font-medium mb-2">
-          Paiement échoué
-        </p>
-        <Link
-          href={`/payment/${appointment.id}`}
-          className="text-sm text-red-600 hover:text-red-700 font-medium"
-        >
-          Réessayer le paiement →
-        </Link>
-      </div>
-    )}
+                {appointment.paymentStatus === 'failed' && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-red-700 font-medium mb-2">
+                      Paiement échoué
+                    </p>
+                    <Link
+                      href={`/payment/${appointment.id}`}
+                      className="text-sm text-red-600 hover:text-red-700 font-medium"
+                    >
+                      Réessayer le paiement →
+                    </Link>
+                  </div>
+                )}
 
-    <Link
-      href={`/patient/appointments`}
-      className="block w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-center"
-    >
-      Voir tous mes rendez-vous
-    </Link>
+                <Link
+                  href={`/patient/appointments`}
+                  className="block w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-center"
+                >
+                  Voir tous mes rendez-vous
+                </Link>
 
-    <Link
-      href="/doctors"
-      className="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-center"
-    >
-      Prendre un nouveau rendez-vous
-    </Link>
-  </div>
-</div>
+                <Link
+                  href="/doctors"
+                  className="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-center"
+                >
+                  Prendre un nouveau rendez-vous
+                </Link>
+              </div>
+            </div>
+
+            {/* Informations complémentaires */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="font-semibold text-gray-900 mb-3">
+                Informations
+              </h3>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">ID du rendez-vous</span>
+                  <span className="font-mono text-gray-700">{appointment.id.toString().slice(-8)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Créé le</span>
+                  <span className="text-gray-700">
+                    {new Date(appointment.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                {appointment.meetingId && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">ID réunion</span>
+                    <span className="font-mono text-gray-700">{appointment.meetingId}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
