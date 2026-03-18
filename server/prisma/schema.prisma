@@ -1,0 +1,207 @@
+// Générateur client
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Source de données MySQL
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+
+model User {
+  id             Int       @id @default(autoincrement())
+  email          String    @unique
+  password       String
+  name           String
+  role           Role      @default(patient)
+  profilePicture String?
+  phoneNumber    String?
+  dateOfBirth    DateTime?
+  gender         Gender?
+  address        Json? // Stocké comme JSON
+
+  // Champs médecin
+  specialization    String?
+  consultationFee   Float?  @default(50)
+  isVerified        Boolean @default(false)
+  bio               String? // ✅ PLUS DE @db.Text
+  languages         Json? // Stocké comme JSON
+  experience        Int?    @default(0)
+  education         Json? // Stocké comme JSON
+  workExperience    Json? // Stocké comme JSON
+  insuranceAccepted Json? // Stocké comme JSON
+  availableSlots    Json? // Stocké comme JSON
+
+  // Statistiques
+  rating        Float @default(0)
+  totalReviews  Int   @default(0)
+  totalPatients Int   @default(0)
+  responseRate  Float @default(0)
+  responseTime  Int   @default(0)
+
+  // Métadonnées
+  isActive  Boolean   @default(true)
+  lastLogin DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  doctorAppointments  Appointment[] @relation("doctor_appointments")
+  patientAppointments Appointment[] @relation("patient_appointments")
+  reviewsAsDoctor     Review[]      @relation("doctor_reviews")
+  reviewsAsPatient    Review[]      @relation("patient_reviews")
+  sentMessages        Message[]     @relation("sent_messages")
+  receivedMessages    Message[]     @relation("received_messages")
+  notifications      Notification[] @relation("user_notifications")
+
+  @@map("users")
+}
+
+model Appointment {
+  id                 Int               @id @default(autoincrement())
+  patientId          Int
+  doctorId           Int
+  patient            User              @relation("patient_appointments", fields: [patientId], references: [id])
+  doctor             User              @relation("doctor_appointments", fields: [doctorId], references: [id])
+  date               DateTime
+  timeSlot           Json // { "start": "09:00", "end": "09:30" }
+  status             AppointmentStatus @default(pending)
+  type               ConsultationType  @default(video)
+  symptoms           String? // ✅ PLUS DE @db.Text
+  notes              String? // ✅ PLUS DE @db.Text
+  prescription       Json? // Stocké comme JSON
+  paymentStatus      PaymentStatus     @default(pending)
+  paymentAmount      Float
+  paymentMethod      String?
+  paymentIntentId    String?           @unique
+  meetingId          String?
+  meetingLink        String?
+  cancellationReason String?
+  cancelledBy        Int?
+  cancelledAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  review   Review?
+  messages Message[]
+
+  @@map("appointments")
+}
+
+model Review {
+  id            Int         @id @default(autoincrement())
+  patientId     Int
+  doctorId      Int
+  appointmentId Int         @unique
+  patient       User        @relation("patient_reviews", fields: [patientId], references: [id])
+  doctor        User        @relation("doctor_reviews", fields: [doctorId], references: [id])
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+
+  rating Int // La validation (1-5) se fera dans le contrôleur
+
+  comment     String // ✅ PLUS DE @db.Text
+  tags        Json? // Stocké comme JSON
+  isAnonymous Boolean @default(false)
+  isVerified  Boolean @default(true)
+  likes       Json? // Stocké comme JSON
+  replies     Json? // Stocké comme JSON
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reviews")
+}
+
+model Message {
+  id            Int          @id @default(autoincrement())
+  content       String // ✅ PLUS DE @db.Text
+  senderId      Int
+  receiverId    Int
+  sender        User         @relation("sent_messages", fields: [senderId], references: [id])
+  receiver      User         @relation("received_messages", fields: [receiverId], references: [id])
+  appointmentId Int? // Optionnel: lié à un rendez-vous
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  isRead        Boolean      @default(false)
+  readAt        DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("messages")
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation("user_notifications", fields: [userId], references: [id])  // Relation corrigée
+  type        NotificationType
+  title       String
+  message     String
+  data        Json?
+  isRead      Boolean  @default(false)
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  @@map("notifications")
+}
+
+// Enums (inchangés)
+enum Role {
+  patient
+  doctor
+  admin
+
+  @@map("roles")
+}
+
+enum Gender {
+  male
+  female
+  other
+
+  @@map("genders")
+}
+
+enum AppointmentStatus {
+  pending
+  confirmed
+  completed
+  cancelled
+  no_show
+
+  @@map("appointment_statuses")
+}
+
+enum ConsultationType {
+  video
+  audio
+  chat
+  in_person
+
+  @@map("consultation_types")
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  refunded
+  failed
+
+  @@map("payment_statuses")
+}
+
+
+enum NotificationType {
+  APPOINTMENT_REMINDER
+  APPOINTMENT_CONFIRMATION
+  APPOINTMENT_CANCELLATION
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  NEW_MESSAGE
+  PRESCRIPTION_ADDED
+  REVIEW_RECEIVED
+}
