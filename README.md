@@ -1,180 +1,92 @@
-# doctor-consultation-platform ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ JOUR 1 : Authentification & Rôles         [TERMINÉ] 09/03/2026
-⏳ JOUR 2 : Profils Utilisateurs              [À VENIR]
-⏳ JOUR 3 : Recherche de Médecins             [À VENIR]
-⏳ JOUR 4 : Prise de Rendez-vous              [À VENIR]
-⏳ JOUR 5 : Paiements                         [À VENIR]
-⏳ JOUR 6 : Consultation Vidéo (ZEGOCLOUD)    [À VENIR]
-⏳ JOUR 7 : Chat en Direct                    [À VENIR]
-⏳ JOUR 8 : Prescriptions Électroniques       [À VENIR]
-⏳ JOUR 9 : Notifications                      [À VENIR]
-⏳ JOUR 10 : Tableau de Bord & Finalisation   [À VENIR]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                                      Jour1   Backend
-✅ Serveur Express configuré
-
-✅ Connexion MongoDB établie
-
-✅ Modèle User avec Mongoose
-
-✅ Routes d'authentification (register/login)
-
-✅ Middleware de protection JWT
-
-✅ Gestion des rôles (patient/doctor/admin)
-
-Frontend
-✅ Architecture Next.js App Router
-
-✅ Pages de login et register
-
-✅ Store Redux configuré
-
-✅ Types TypeScript
-
-✅ Intégration API avec fetch
-
-✅ Gestion d'état avec Redux Toolkit
-
-✅ Protection des routes côté client                                                                                                 Jour 2 Backend
- ┌─────────────────────────────────────────────────────────┐
-│  ✅ 1. Routes CRUD pour les profils                     │
-│  ✅ 2. Upload d'images (Cloudinary/Multer)              │
-│  ✅ 3. Gestion des disponibilités médecins              │
-│  ✅ 4. Page de profil patient                           │
-│  ✅ 5. Page de profil médecin                           │
-│  ✅ 6. Édition de profil avec preview image             │
-└─────────────────────────────────────────────────────────┘  Ce que j'ai apris au jour 2 : Gestion des fichiers avec Multer
-
-Upload vers le cloud avec Cloudinary
-
-Gestion des erreurs asynchrones
-
-Mise à jour MongoDB avec Mongoose
-
-Composants React avec TypeScript
-
-Hooks personnalisés pour l'authentification
-
-Gestion d'état avec Redux Toolkit
-
-Layouts conditionnels selon le rôle
-
-
-Jour 3
- 🚀 Fonctionnalités testées et validées
-Backend
-Recherche de médecins avec filtres multiples
-
-Récupération des détails d'un médecin par nom
-
-Récupération des disponibilités
-
-Création et consultation d'avis
-
-Calcul automatique des notes moyennes
-
-Frontend
-Affichage de la liste des médecins
-
-Filtres interactifs
-
-Pagination
-
-URLs propres avec slugs
-
-Page détail avec toutes les infos
-
-Affichage des disponibilités
-
-Système de notation par étoiles
-
-Navigation intuitive
-
-   Jour 4
-
-📅 Prendre rendez-vous avec un calendrier interactif
-
-🔍 Voir les créneaux disponibles en temps réel
-
-📋 Gérer leurs rendez-vous (liste, détails, annulation)
-
-🏥 Choisir le type de consultation (vidéo/audio/chat)
-
-⏰ Respecter les règles métier (délais d'annulation)
-
-Jour 5 : Consultation Vidéo avec ZEGOCLOUD
-
-
-
-Jour 6 : Chat en Direct & Messagerie
-
-✅ Backend - Modèle et API
-Création du modèle Message dans Prisma
-
-Relations avec User et Appointment
-
-API complète pour les messages :
-
-POST /api/messages - Envoyer un message
-
-GET /api/messages/conversations - Lister les conversations
-
-GET /api/messages/conversation/:userId - Voir une conversation
-
-PUT /api/messages/read/:senderId - Marquer comme lu
-
-DELETE /api/messages/:id - Supprimer un message
-
-✅ WebSocket - Temps réel
-Configuration de Socket.IO dans le backend
-
-Gestion des connexions utilisateur
-
-Rooms de conversation individuelles
-
-Émission d'événements en temps réel
-
-Notifications de nouveaux messages
-
-✅ Frontend - Composants de chat
-Hook personnalisé useSocket pour la connexion WebSocket
-
-Composant ChatWindow avec :
-
-Affichage des messages en temps réel
-
-Gestion des envois (avec message temporaire)
-
-Évitement des doublons (Set d'IDs)
-
-Indicateurs de lecture
-
-Scroll automatique
-
-Composant ConversationList avec :
-
-Liste des conversations
-
-Badges de messages non lus
-
-Dernier message affiché
-
-Tri par date
-
-✅ Pages de messagerie
-Page /doctor/messages - Liste des conversations du médecin
-
-Page /doctor/messages/[userId] - Chat direct avec un patient
-
-Page /patient/messages - Liste des conversations du patient
-
-Page /patient/messages/[userId] - Chat direct avec un médecin
-
-Intégration dans la sidebar (menu Messages)
-
-✅ Intégration avec les rendez-vous
-Bouton "Contacter le médecin" dans les rendez-vous patient
-
-Bouton "Contacter le patient" dans les rendez-vous médecin
-
-Lien direct vers le chat avec l'ID de l'interlocuteur
+<div align="center">
+  <img src="https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js" alt="Next.js"/>
+  <img src="https://img.shields.io/badge/Node.js-20-green?style=for-the-badge&logo=node.js" alt="Node.js"/>
+  <img src="https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma" alt="Prisma"/>
+  <img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql" alt="MySQL"/>
+  <img src="https://img.shields.io/badge/TailwindCSS-06B6D4?style=for-the-badge&logo=tailwindcss" alt="TailwindCSS"/>
+  <img src="https://img.shields.io/badge/Stripe-008CDD?style=for-the-badge&logo=stripe" alt="Stripe"/>
+</div>
+
+<br/>
+
+<div align="center">
+  <h1>🏥 DoctorConsult</h1>
+  <p><strong>Plateforme de téléconsultation médicale moderne et sécurisée</strong></p>
+  <p>Connectez patients et médecins pour des consultations en ligne simples, rapides et fiables.</p>
+</div>
+
+<br/>
+
+<div align="center">
+  <img src="https://via.placeholder.com/800x400/2563eb/ffffff?text=DoctorConsult+Dashboard" alt="DoctorConsult Dashboard" width="800"/>
+</div>
+
+---
+
+## ✨ **Fonctionnalités**
+
+### 👨‍⚕️ **Pour les patients**
+- 🔍 **Recherche avancée** de médecins par spécialité, prix, disponibilité
+- 📅 **Prise de rendez-vous** avec calendrier interactif
+- 💳 **Paiement sécurisé** via Stripe
+- 🎥 **Consultation vidéo** en HD (ZEGOCLOUD)
+- 💬 **Messagerie instantanée** avec les médecins
+- 📋 **Prescriptions électroniques** téléchargeables en PDF
+- ⭐ **Notation et avis** sur les consultations
+- 📊 **Historique** complet des consultations
+- 🔔 **Notifications** par email et SMS
+
+### 👩‍⚕️ **Pour les médecins**
+- 📅 **Gestion des disponibilités** par créneaux
+- 👥 **Gestion des patients** et rendez-vous
+- 💰 **Suivi des revenus** et statistiques
+- 📋 **Prescriptions électroniques** avec génération PDF
+- 💬 **Messagerie** avec les patients
+- 📊 **Tableau de bord** avec statistiques détaillées
+- 📈 **Analyse des performances** (satisfaction, revenus)
+
+### 🔒 **Sécurité**
+- ✅ Authentification JWT
+- ✅ Chiffrement des données
+- ✅ Conformité RGPD
+- ✅ Paiements sécurisés Stripe
+
+---
+
+## 🚀 **Technologies utilisées**
+
+### Frontend
+| Technologie | Version | Utilisation |
+|-------------|---------|-------------|
+| **Next.js** | 14 | Framework React avec App Router |
+| **TypeScript** | 5 | Typage statique |
+| **TailwindCSS** | 3 | Stylisation et design responsive |
+| **Redux Toolkit** | 2 | Gestion d'état |
+| **Chart.js** | 4 | Graphiques et statistiques |
+| **ZEGOCLOUD** | Latest | SDK de visioconférence |
+
+### Backend
+| Technologie | Version | Utilisation |
+|-------------|---------|-------------|
+| **Node.js** | 20 | Runtime JavaScript |
+| **Express** | 4 | Framework API REST |
+| **Prisma** | 6 | ORM moderne |
+| **MySQL** | 8 | Base de données relationnelle |
+| **JWT** | 9 | Authentification |
+| **Stripe** | Latest | Paiements en ligne |
+| **Mailgun** | Latest | Emails transactionnels |
+| **Socket.IO** | 4 | WebSocket temps réel |
+
+---
+
+## 📦 **Installation**
+
+### Prérequis
+- Node.js 18+
+- MySQL 8+
+- npm ou yarn
+
+### 1. Cloner le projet
+```bash
+git clone https://github.com/votre-compte/doctor-consultation-platform.git
+cd doctor-consultation-platform
